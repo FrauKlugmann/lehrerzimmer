@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zuordnungs-Generator Schule</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; min-height: 100vh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%) fixed; transition: background .4s; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 14px 18px 10px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 40%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 12px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  header h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+  header p { margin: 4px 0 0; opacity: .9; font-size: 15px; }
+
+  section { background: #fff; border: 2px solid var(--rand); border-radius: 18px; padding: 14px 18px 16px; margin: 14px 0; }
+  section > h2 { margin: 0 0 10px; font-size: 20px; color: var(--h1); display: flex; align-items: center; gap: 10px; }
+  section > h2 .nr { width: 30px; height: 30px; border-radius: 50%; background: var(--b2); color: #fff; font-size: 16px;
+    display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  label.f { display: block; font-weight: bold; font-size: 15px; margin: 10px 0 4px; }
+  .klein { font-weight: normal; color: #555; font-size: 13px; }
+  input[type=text], select { font: inherit; font-size: 17px; padding: 8px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; background: #fff; }
+  input[type=text]:focus, select:focus { outline: none; border-color: var(--b2); }
+  input.gefuellt { border-color: #43A047; background: #F4FBF3; }
+  input.leer { border-color: #E53935; background: #FFF5F5; }
+  input.doppelt { border-color: #FB8C00; background: #FFF8EC; }
+  .zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 640px) { .zwei { grid-template-columns: 1fr; } }
+
+  .spielart { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  @media (max-width: 640px) { .spielart { grid-template-columns: 1fr; } }
+  .spielart button { background: #fff; color: #333; border: 3px solid #e0e0e0; box-shadow: none; border-radius: 16px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px; text-align: left; font-size: 16px; }
+  .spielart button .gr { font-size: 34px; }
+  .spielart button small { display: block; font-weight: normal; color: #666; font-size: 13px; margin-top: 2px; }
+  .spielart button.an { border-color: var(--b2); background: var(--hell); color: var(--h1); }
+  body.memory .nurKleben { display: none !important; }
+  .farbwahl { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+  .farbwahl button { width: auto; display: flex; flex-direction: column; align-items: center; gap: 9px; background: none; box-shadow: none;
+    color: #333; padding: 0; font-size: 14px; }
+  .farbwahl .kreis { width: 52px; height: 52px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 0 2px #cfd8dc; transition: transform .15s; }
+  .farbwahl button.an .kreis { box-shadow: 0 0 0 3px #111; transform: scale(1.1); }
+  .farbwahl button.an { font-weight: bold; }
+
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.12);
+    padding: 9px 22px; font-size: 16px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button.hell { background: #fff; color: var(--h1); border: 2px solid var(--b2); box-shadow: none; }
+  button.weg { background: none; color: #999; box-shadow: none; padding: 4px 10px; font-size: 20px; }
+  button.weg:hover { color: #C62828; }
+  button.gross { font-size: 19px; padding: 12px 28px; }
+
+  .runde { border: 2px solid var(--rand); border-radius: 16px; margin: 12px 0; overflow: hidden; }
+  .rkopf { background: var(--hell); padding: 8px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .rkopf b { font-size: 18px; color: var(--h1); margin-right: auto; }
+  .rkopf label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .rkopf select { width: auto; font-size: 15px; padding: 5px 8px; }
+  .rinhalt { padding: 10px 12px 12px; }
+  .aufgabe { font-size: 14px; color: #555; margin-bottom: 8px; }
+  .zeile { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+  .zeile .gnr { width: 26px; text-align: right; color: #888; font-size: 14px; flex: none; }
+  .zelle { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 4px; }
+  .zelle input { flex: 1 1 0; min-width: 0; }
+  .zelle .bildknopf { flex: none; width: 38px; height: 38px; padding: 0; font-size: 18px; border-radius: 10px;
+    background: #fff; border: 2px solid #cfd8dc; box-shadow: none; color: #333; }
+  .zelle .bildknopf:hover { border-color: var(--b2); }
+  .zelle .bild { flex: 1 1 0; min-width: 0; height: 42px; border: 2px solid #43A047; border-radius: 10px; background: #F4FBF3;
+    display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
+  .zelle .bild img { max-height: 100%; max-width: 100%; border-radius: 6px; }
+  .zelle .bild.leer { border-color: #E53935; }
+  .kopfzeile { display: flex; align-items: center; gap: 6px; margin: 2px 0 4px; }
+  .kopfzeile .gnr, .kopfzeile .verb, .kopfzeile .platz { visibility: hidden; }
+  .kopfzeile .platz { width: 40px; flex: none; }
+  .kopfzeile label { flex: 1 1 0; min-width: 0; font-size: 13px; color: #555; display: flex; align-items: center; gap: 4px; }
+  .kopfzeile select { font-size: 14px; padding: 4px 6px; flex: 1; min-width: 0; }
+  .voll { font-size: 14px; color: #555; margin-top: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .zeile .verb { flex: none; color: #9e8f4e; font-weight: bold; font-size: 18px; width: 16px; text-align: center; }
+  .hinweis { font-size: 14px; border-radius: 10px; padding: 8px 12px; margin-top: 8px; }
+  .hinweis.warn { background: #FFF3E0; color: #8D4A00; }
+  .hinweis.fehl { background: #FFEBEE; color: #B71C1C; }
+  .hilfebox { background: var(--hell); border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+  .hilfebox code { background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 0 5px; font-size: 14px; }
+
+  .knoepfe { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  #meldung { font-weight: bold; font-size: 15px; margin-top: 10px; min-height: 20px; }
+  #meldung.gut { color: #2E7D32; } #meldung.schlecht { color: #C62828; }
+  footer { text-align: right; font-size: 12px; color: #333; margin-top: 6px; }
+
+  #testfenster { position: fixed; inset: 0; z-index: 50; display: none; background: rgba(255,255,255,.5);
+    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); padding: 14px; flex-direction: column; gap: 8px; }
+  #testfenster.zeigen { display: flex; }
+  #testfenster .oben { display: flex; justify-content: flex-end; }
+  #testfenster iframe { flex: 1; width: 100%; border: none; border-radius: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.35); background: #fff; }
+  #kopierfeld { position: fixed; left: -9999px; }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <h1>Zuordnungs-Generator der Emil-Petri-Schule Arnstadt</h1>
+    <p>Karten eintragen, die zusammengehören. Daraus entsteht ein fertiges Klebespiel oder Memory für die Schüler.</p>
+  </header>
+
+  <section>
+    <h2><span class="nr">1</span>Aussehen</h2>
+    <label class="f">Spielart</label>
+    <div class="spielart" id="spielart">
+      <button type="button" data-a="kleben"><span>Klebespiel<small>Karten zusammenschieben und zusammenkleben</small></span></button>
+      <button type="button" data-a="memory"><span>Memory<small>Karten aufdecken und Paare finden</small></span></button>
+    </div>
+    <label class="f" for="titel">Titel des Spiels</label>
+    <input type="text" id="titel" value="Was gehört zusammen?" style="max-width:480px">
+    <label class="f">Farbe</label>
+    <div class="farbwahl" id="farbwahl"></div>
+  </section>
+
+  <section>
+    <h2><span class="nr">2</span>Runden und Karten</h2>
+    <div class="hilfebox">
+      In jede Zeile kommen die Karten, die <b>zusammengehören</b>. Im Spiel werden alle Karten einer Runde gemischt.<br>
+      Statt Text kann eine Karte auch ein <b>Bild</b> zeigen: auf 🖼 tippen.<br>
+      Über jeder Spalte kann man <b>Vorlesen</b> einstellen. Dann liest das Spiel die Karten dieser Spalte beim Antippen vor.<br>
+      Tipps: <code>3/4</code> wird als Bruch angezeigt. <code>*</code> wird zum Malpunkt. Kurze Texte passen am besten auf die Karten.
+    </div>
+    <div id="runden"></div>
+    <button class="hell" id="neueRunde">＋ Weitere Runde</button>
+  </section>
+
+  <section>
+    <h2><span class="nr">3</span>Erstellt von</h2>
+    <label class="f" for="name">Dein Name</label>
+    <input type="text" id="name" placeholder="z. B. Max Mustermann" style="max-width:480px">
+  </section>
+
+  <section>
+    <h2><span class="nr">4</span>Spiel erstellen</h2>
+    <div class="knoepfe">
+      <button class="gross" id="testen">▶ Spiel testen</button>
+      <button class="gross" id="laden">⬇ Spiel herunterladen</button>
+      <button class="hell" id="oeffnen">📂 Gespeichertes Spiel bearbeiten</button>
+      <input type="file" id="datei" accept=".html,.htm" style="display:none">
+      <input type="file" id="bilddatei" accept="image/*" style="display:none">
+    </div>
+    <div id="meldung"></div>
+    <button class="hell" id="kopieren" style="display:none; margin-top:8px">📋 Stattdessen HTML kopieren</button>
+    <div class="hilfebox" style="margin-top:10px">
+      „Spiel herunterladen“ speichert das fertige Spiel sofort als HTML-Datei, auf dem iPad in der App „Dateien“, am PC im Ordner „Downloads“.
+      Die Datei kann man per Doppelklick im Browser öffnen, verschicken oder bei GitHub Pages hochladen.
+      Um ein Spiel später zu ändern, öffne die Datei hier mit „Gespeichertes Spiel bearbeiten“.
+    </div>
+  </section>
+
+  <footer>Erstellt von Marion Klugmann (November 2026) mit freundlicher Unterstützung von Claude.</footer>
+</div>
+
+<div id="testfenster">
+  <div class="oben"><button id="testZu">✕ Test schließen</button></div>
+  <iframe id="testframe" title="Spiel testen"></iframe>
+</div>
+<textarea id="kopierfeld"></textarea>
+
+<script type="text/plain" id="vorlage"><!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Was gehört zusammen?</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; overflow: hidden;
+    height: 100vh; height: 100dvh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%); position: relative; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; height: 100%; max-width: 1400px; margin: 0 auto; padding: 12px 14px 8px;
+    display: flex; flex-direction: column; gap: 8px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 55%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 8px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  .titel { flex: 1 1 260px; position: relative; }
+  .titel .schule { font-size: 12px; opacity: .85; letter-spacing: .5px; position: absolute; left: 0; bottom: 100%; margin-bottom: 1px; white-space: nowrap; }
+  .titel h1 { margin: 0; font-size: clamp(18px, 2.3vw, 26px); }
+  header.mitschule { padding-top: 20px; padding-bottom: 12px; }
+  .chips { display: flex; gap: 6px; align-items: center; }
+  .chip { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.45); font-size: 16px; }
+  .chip.aktiv { background: #fff; color: var(--h1); border-color: #fff; transform: scale(1.12); }
+  .chip.fertig { background: #FFD54F; color: #5D4037; border-color: #FFD54F; }
+  .uhr { background: rgba(0,0,0,.22); border-radius: 999px; padding: 6px 14px; font-size: 20px; font-weight: bold;
+    font-variant-numeric: tabular-nums; min-width: 104px; text-align: center; }
+
+  .leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .info { font-size: 17px; flex: 1 1 300px; }
+  #feedback { font-size: 16px; font-weight: bold; min-height: 20px; }
+  #feedback.gut { color: #2E7D32; } #feedback.schlecht { color: #C62828; }
+  .stand { display: flex; gap: 8px; font-size: 15px; }
+  .pill { background: #fff; border: 2px solid #ddd; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+  .pill b.rot { color: #C62828; }
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.15);
+    padding: 9px 26px; font-size: 18px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.hilfe { width: 38px; height: 38px; padding: 0; font-size: 20px; flex: none; background: rgba(255,255,255,.18);
+    border: 2px solid rgba(255,255,255,.55); box-shadow: none; }
+
+  #board { flex: 1; min-height: 0; position: relative; border-radius: 18px; overflow: hidden;
+    border: 2px solid var(--rand); box-shadow: inset 0 2px 10px rgba(0,0,0,.06);
+    background-color: #fffdf7;
+    background-image: radial-gradient(#dcdcd4 1.2px, transparent 1.2px); background-size: 24px 24px; }
+
+  .group { position: absolute; display: flex; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none;
+    transition: rotate .25s; }
+  .group.drag { cursor: grabbing; filter: drop-shadow(0 12px 14px rgba(0,0,0,.28)); rotate: 0deg !important; }
+  .group.spring { transition: left .65s cubic-bezier(.34,1.56,.64,1), top .65s cubic-bezier(.34,1.56,.64,1), rotate .25s; }
+  .card { width: var(--cw); height: var(--ch); border: 2px solid #37474F; border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f2f5fa 100%);
+    display: flex; align-items: center; justify-content: center; font-size: var(--fs); font-weight: bold;
+    box-shadow: 0 3px 0 #cfd8dc, 0 5px 10px rgba(0,0,0,.12); white-space: nowrap; position: relative;
+    text-align: center; padding: 0 4px; overflow: hidden; }
+  .card.lang { font-size: var(--fsl); }
+  .card.bildkarte { padding: 3px; background: #fff; }
+  .card.bildkarte img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; pointer-events: none; -webkit-user-drag: none; }
+  .card.spricht::after { content: "🔊"; position: absolute; right: 3px; top: 1px; font-size: calc(var(--ch) * .2); opacity: .55; }
+  .card.redet { outline: 3px solid #FFB300; outline-offset: -1px; }
+  .card.sehrlang { font-size: var(--fsx); white-space: normal; line-height: 1.1; }
+  .group.voll .card { border-color: #2E7D32; background: linear-gradient(180deg, #F1F8E9, #DCEDC8); box-shadow: 0 3px 0 #A5D6A7, 0 5px 10px rgba(0,0,0,.1); }
+  .group.voll { animation: pop .4s; }
+  @keyframes pop { 50% { scale: 1.06; } }
+  .frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; font-size: .9em; vertical-align: middle; }
+  .frac > span:first-child { border-bottom: 2.5px solid #111; padding: 0 4px 2px; }
+  .frac > span:last-child { padding: 2px 4px 0; }
+
+  .tape { position: absolute; top: 50%; width: var(--tw); height: calc(var(--ch) * .5); margin-top: calc(var(--ch) * -.25);
+    transform: rotate(-10deg); background: rgba(245, 232, 180, .88); color: #3a3a3a;
+    display: flex; align-items: center; justify-content: center; font-size: calc(var(--ch) * .36); font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: background .35s, color .35s; z-index: 2;
+    clip-path: polygon(0 0, 100% 0, 95% 14%, 100% 28%, 95% 42%, 100% 56%, 95% 70%, 100% 84%, 100% 100%, 0 100%, 5% 86%, 0 72%, 5% 58%, 0 44%, 5% 30%, 0 16%); }
+  .tape::before { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.45) 50%, transparent 70%); }
+  .tape.neu { cursor: pointer; }
+  .tape.pfeil { font-size: calc(var(--ch) * .5); }
+  .tape.stick { animation: stick .35s ease-out; }
+  @keyframes stick { from { transform: rotate(-10deg) scaleX(0); } to { transform: rotate(-10deg) scaleX(1); } }
+  .tape.ok { background: rgba(46, 125, 50, .92); color: #fff; }
+  .tape.bad { background: rgba(211, 47, 47, .94); color: #fff; }
+  .tape.dissolve, .tape.weg { animation: dissolve .8s ease-in forwards; }
+  .tape.weg { animation-duration: .45s; }
+  @keyframes dissolve {
+    0% { opacity: 1; filter: blur(0); transform: rotate(-10deg) scale(1); }
+    40% { opacity: .8; transform: rotate(-16deg) scale(1.1); }
+    100% { opacity: 0; filter: blur(8px); transform: rotate(-28deg) scale(1.5) translateY(-24px); }
+  }
+  .shake { animation: shake .4s; }
+  @keyframes shake { 0%,100% { translate: 0; } 25% { translate: -8px; } 50% { translate: 8px; } 75% { translate: -5px; } }
+
+  footer { text-align: right; font-size: 12px; color: #333; min-height: 2px; }
+
+  #overlay, #intro { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 50;
+    background: rgba(255,255,255,.5); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+  #overlay.zeigen, #intro.zeigen { display: flex; }
+  .modal { background: #fff; border-radius: 22px; padding: 22px 30px 24px; min-width: 300px; max-width: 92vw; text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,.3); border-top: 8px solid var(--b2); animation: rein .45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes rein { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h2 { margin: 0 0 10px; font-size: 28px; color: var(--h1); }
+  .modal .zeile { font-size: 20px; margin: 6px 0; }
+  .modal .gross { font-size: 24px; font-weight: bold; margin: 12px 0 4px; }
+  .modal .stern { color: #F9A825; }
+  .modal button { margin-top: 14px; }
+  .anleitung { width: 620px; max-height: 92vh; overflow: auto; text-align: left; }
+  .anleitung h2 { text-align: center; }
+  .schritt { display: flex; gap: 14px; align-items: flex-start; padding: 10px 12px; margin: 8px 0; border-radius: 14px; background: var(--hell); font-size: 18px; line-height: 1.35; }
+  .schritt .nr { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--b2); color: #fff; font-weight: bold;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .demo { display: flex; justify-content: center; align-items: center; margin: 4px 0 10px; position: relative; }
+  .demo .dk { width: 92px; height: 58px; border: 2px solid #37474F; border-radius: 10px; background: #fff; font-weight: bold; font-size: 20px;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 #cfd8dc; }
+  .demo .dt { position: absolute; width: 34px; height: 30px; transform: rotate(-10deg); background: rgba(245,232,180,.92);
+    display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .farbe { display: inline-block; padding: 0 7px; border-radius: 5px; color: #fff; font-weight: bold; }
+  .anleitung .knopf { text-align: center; }
+  .anleitung button { font-size: 22px; padding: 11px 40px; }
+  #konfetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <div class="titel" id="titelbox">
+      <div class="schule" id="schule"></div>
+      <h1 id="titel">Was gehört zusammen?</h1>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="uhr" id="uhr">⏱ 00:00</div>
+    <button class="hilfe" id="hilfe" title="Anleitung">?</button>
+  </header>
+
+  <div class="leiste">
+    <div class="info" id="info"></div>
+    <div id="feedback"></div>
+    <div class="stand" id="stand"></div>
+    <button id="pruefen">✔ Prüfen</button>
+  </div>
+
+  <div id="board"></div>
+
+  <footer id="fuss"></footer>
+</div>
+<div id="overlay"><div class="modal" id="modal"></div></div>
+<div id="intro" class="zeigen"><div class="modal anleitung">
+  <h2>So funktioniert das Spiel</h2>
+  <div class="demo"><div class="dk">50&#8239;%</div><div class="dk">0,5</div><div class="dt">=</div></div>
+  <div class="schritt"><div class="nr">1</div><div><b>Zusammenschieben:</b> Ziehe eine Karte mit dem Finger an eine passende Karte heran. Die Karten rutschen zusammen und ein <b>Klebestreifen</b> hält sie fest.</div></div>
+  <div class="schritt"><div class="nr">2</div><div><b>Prüfen:</b> Tippe auf „✔ Prüfen“. <span class="farbe" style="background:#2E7D32">Grün</span> heißt richtig, der Streifen klebt fest. <span class="farbe" style="background:#D32F2F">Rot</span> heißt falsch, der Streifen löst sich von selbst.</div></div>
+  <div class="schritt"><div class="nr">3</div><div><b>Vertan?</b> Ein <b>Doppeltipp</b> auf einen gelben Klebestreifen löst ihn wieder. Dann kannst du neu kleben.</div></div>
+  <div class="schritt" id="sprechschritt" style="display:none"><div class="nr">🔊</div><div><b>Vorlesen:</b> Tippe einmal auf eine Karte mit dem Lautsprecher, dann wird das Wort vorgelesen.</div></div>
+  <div class="schritt"><div class="nr">4</div><div><b>Ziel:</b> <span id="zielsatz">Es gibt mehrere Runden.</span> Die Zeit läuft ab der ersten Karte, die du berührst. Versuche, ohne Fehler durchzukommen!</div></div>
+  <div class="knopf"><button id="losgehts">Los geht's! ➜</button></div>
+</div></div>
+<canvas id="konfetti"></canvas>
+
+<script type="application/json" id="spieldaten">/*__DATEN__*/<\/script>
+<script>
+const FARBEN = {
+  tuerkis: { r: ['#00585C', '#00897B', '#26C6DA', '#84E3EC'], h: ['#00616A', '#00838F', '#1FB5C6'], b: ['#26B5A6', '#00897B', '#00695C'], hell: '#EAF8F8', rand: '#C5E8EA' },
+  rot:     { r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' }
+};
+let DATEN;
+try { DATEN = JSON.parse(document.getElementById('spieldaten').textContent); } catch (e) { DATEN = null; }
+if (!DATEN) DATEN = { titel: 'Was gehört zusammen?', schule: '', farbe: 'tuerkis', name: '', ki: 'Claude', monat: '',
+  runden: [{ groesse: 2, zeichen: '=', gruppen: [['1/2', '50 %'], ['1/4', '25 %'], ['1/10', '10 %'], ['3/4', '75 %']] }] };
+
+/* Farben setzen */
+(function () {
+  const f = FARBEN[DATEN.farbe] || FARBEN.tuerkis, s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c));
+  f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c));
+  s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand);
+})();
+
+/* Texte setzen */
+document.title = DATEN.titel || 'Was gehört zusammen?';
+document.getElementById('titel').textContent = DATEN.titel || 'Was gehört zusammen?';
+document.getElementById('schule').textContent = DATEN.schule || '';
+if (DATEN.schule) document.querySelector('header').classList.add('mitschule');
+if (DATEN.name) {
+  let z = 'Erstellt von ' + DATEN.name + (DATEN.monat ? ' (' + DATEN.monat + ')' : '');
+  z += (DATEN.ki ? ' mit freundlicher Unterstützung von ' + DATEN.ki : '') + '.';
+  document.getElementById('fuss').textContent = z;
+}
+
+/* Vorlesen */
+function vorlesen(g, ci) {
+  const k = g.cards[ci];
+  if (!k || !k.sprache || !k.text || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(k.text);
+    u.lang = k.sprache; u.rate = .9;
+    const st = speechSynthesis.getVoices().filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(k.sprache.slice(0, 2).toLowerCase()));
+    const genau = st.find(v => v.lang.replace('_', '-').toLowerCase() === k.sprache.toLowerCase());
+    if (genau || st[0]) u.voice = genau || st[0];
+    const c = board.querySelector(`[data-id="${g.id}"] .card[data-ci="${ci}"]`);
+    if (c) { c.classList.add('redet'); u.onend = u.onerror = () => c.classList.remove('redet'); setTimeout(() => c.classList.remove('redet'), 4000); }
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); } catch (e) {} }
+
+/* Karteninhalt: Text sicher machen, 3/4 als Bruch, * als Malpunkt */
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function fmt(t) {
+  let h = esc(String(t).trim());
+  h = h.replace(/(\d+(?:,\d+)?)\s*\/\s*(\d+(?:,\d+)?)/g, '<span class="frac"><span>$1</span><span>$2</span></span>');
+  h = h.replace(/\s*\*\s*/g, '&nbsp;·&nbsp;');
+  h = h.replace(/(\d) (%|‰)/g, '$1&#8239;$2');
+  return h;
+}
+function laenge(t) { if (t && typeof t === 'object') return 0; return String(t).replace(/\d+\s*\/\s*\d+/g, 'xx').replace(/\s+/g, ' ').trim().length; }
+const ZAHLWORT = ['', 'eine', 'zwei', 'drei', 'vier', 'fünf'];
+
+const RUNDEN = DATEN.runden.map((r, i) => ({
+  groesse: r.groesse, zeichen: r.zeichen || '=', sprachen: r.sprachen || [],
+  text: `<b>Runde ${i + 1}:</b> ${r.groesse} Karten gehören zusammen.`,
+  sets: r.gruppen
+}));
+if (RUNDEN.some(r => r.sprachen.some(x => x))) document.getElementById('sprechschritt').style.display = 'flex';
+document.getElementById('zielsatz').textContent = RUNDEN.length === 1 ? 'Es gibt eine Runde.' : `Es gibt ${RUNDEN.length} Runden.`;
+
+const board = document.getElementById('board');
+const btnPruefen = document.getElementById('pruefen');
+const fb = document.getElementById('feedback');
+
+let runde = 0, groups = [], fehler = 0, punkte = [], busy = false, gid = 0, zTop = 10;
+let W = 0, H = 0, cw = 110, ch = 74, tw = 40, gap = 20, anzahl = 0;
+let t0 = null, tEnde = null;
+
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const maxVerb = r => RUNDEN[r].sets.length * (RUNDEN[r].groesse - 1);
+const gW = g => g.cards.length * cw;
+const mmss = ms => { const s = Math.floor(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+
+setInterval(() => {
+  const ms = t0 ? ((tEnde || Date.now()) - t0) : 0;
+  document.getElementById('uhr').textContent = '⏱ ' + mmss(ms);
+}, 250);
+
+function masse() {
+  W = board.clientWidth; H = board.clientHeight;
+  const gr = RUNDEN[runde].groesse;
+  for (cw = 128; cw >= 56; cw -= 2) {
+    ch = Math.round(cw * .64); gap = Math.round(cw * .2);
+    const cols = Math.floor((W - gap) / (cw + gap));
+    if (cols < 3) continue;
+    const rows = Math.ceil(anzahl / cols);
+    if (gap + rows * (ch + gap) <= H * .6 && gr * cw <= W - 10) break;
+  }
+  tw = Math.round(cw * .36);
+  const s = board.style;
+  s.setProperty('--cw', cw + 'px'); s.setProperty('--ch', ch + 'px'); s.setProperty('--tw', tw + 'px');
+  s.setProperty('--fs', Math.round(cw * .22) + 'px'); s.setProperty('--fsl', Math.round(cw * .165) + 'px');
+  s.setProperty('--fsx', Math.round(cw * .13) + 'px');
+}
+
+function starteRunde(r) {
+  runde = r; fehler = 0; busy = false; groups = [];
+  document.getElementById('overlay').classList.remove('zeigen');
+  fb.textContent = ''; fb.className = '';
+  btnPruefen.disabled = false;
+  const R = RUNDEN[r];
+  const karten = [];
+  R.sets.forEach((s, si) => s.forEach((t, pos) => {
+    const n = laenge(t), bild = t && typeof t === 'object' && t.bild;
+    const sprache = !bild && R.sprachen[pos] ? R.sprachen[pos] : '';
+    karten.push({ html: bild ? `<img src="${bild}" alt="">` : fmt(t), bild: !!bild, text: bild ? '' : String(t).replace(/\*/g, ' mal ').trim(), sprache,
+      lang: n > 6 && n <= 10, sehrlang: n > 10, set: si, pos, rot: (Math.random() * 7 - 3.5).toFixed(1) });
+  }));
+  shuffle(karten);
+  anzahl = karten.length;
+  masse();
+  const cols = Math.floor((W - gap) / (cw + gap));
+  const cellW = (W - gap) / cols;
+  karten.forEach((k, i) => {
+    const c = i % cols, z = Math.floor(i / cols);
+    const x = gap / 2 + c * cellW + (cellW - cw) / 2 + (Math.random() * 8 - 4);
+    const y = gap * .7 + z * (ch + gap) + (Math.random() * 6 - 3);
+    groups.push({ id: ++gid, cards: [k], seams: [], x, y });
+  });
+  groups.forEach(klemmen);
+  document.getElementById('info').innerHTML = R.text;
+  document.getElementById('chips').innerHTML = RUNDEN.map((_, i) =>
+    `<div class="chip ${i < r ? 'fertig' : ''} ${i === r ? 'aktiv' : ''}">${i < r ? '✓' : i + 1}</div>`).join('');
+  zeigeStand();
+  render();
+}
+
+function zeigeStand() {
+  let h = `<span class="pill">Fehler: <b class="rot">${fehler}</b></span>`;
+  if (runde > 0) {
+    const p = punkte.slice(0, runde).reduce((a, b) => a + b, 0);
+    let m = 0; for (let i = 0; i < runde; i++) m += maxVerb(i);
+    h = `<span class="pill">bisher: <b>${p}/${m}</b> richtig</span>` + h;
+  }
+  document.getElementById('stand').innerHTML = h;
+}
+
+function klemmen(g) {
+  g.x = Math.max(0, Math.min(W - gW(g), g.x));
+  g.y = Math.max(0, Math.min(H - ch, g.y));
+}
+const istVoll = g => g.cards.length === RUNDEN[runde].groesse && g.seams.every(s => s.st === 'ok');
+
+function render() {
+  board.innerHTML = '';
+  groups.forEach(g => {
+    const el = document.createElement('div');
+    el.className = 'group' + (istVoll(g) ? ' voll' : '');
+    el.dataset.id = g.id;
+    el.style.left = g.x + 'px'; el.style.top = g.y + 'px';
+    el.style.width = gW(g) + 'px'; el.style.height = ch + 'px';
+    if (g.cards.length === 1) el.style.rotate = g.cards[0].rot + 'deg';
+    g.cards.forEach((k, ci) => {
+      const c = document.createElement('div');
+      c.className = 'card' + (k.lang ? ' lang' : '') + (k.sehrlang ? ' sehrlang' : '') + (k.bild ? ' bildkarte' : '') + (k.sprache ? ' spricht' : '');
+      c.dataset.ci = ci; c.innerHTML = k.html;
+      el.appendChild(c);
+    });
+    g.seams.forEach((s, i) => {
+      const t = document.createElement('div');
+      t.className = 'tape' + (s.st === 'ok' ? ' ok' : ' neu') + (s.fresh ? ' stick' : '') + (RUNDEN[runde].zeichen === '→' ? ' pfeil' : '');
+      s.fresh = false;
+      t.dataset.i = i;
+      t.style.left = ((i + 1) * cw - tw / 2) + 'px';
+      t.textContent = RUNDEN[runde].zeichen;
+      el.appendChild(t);
+    });
+    el.addEventListener('pointerdown', down);
+    board.appendChild(el);
+  });
+}
+
+let drag = null, letzterTipp = { key: null, t: 0 };
+function down(e) {
+  if (busy) return;
+  if (!t0) t0 = Date.now();
+  const el = e.currentTarget;
+  const g = groups.find(x => x.id == el.dataset.id);
+  const br = board.getBoundingClientRect();
+  const tape = e.target.closest('.tape'), karte = e.target.closest('.card');
+  drag = { karte: (!tape && karte) ? +karte.dataset.ci : null, g, el, dx: e.clientX - br.left - g.x, dy: e.clientY - br.top - g.y, sx: e.clientX, sy: e.clientY,
+           naht: tape ? +tape.dataset.i : null };
+  el.setPointerCapture(e.pointerId);
+  el.style.zIndex = ++zTop;
+  el.addEventListener('pointermove', move);
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+  e.preventDefault();
+}
+function move(e) {
+  if (!drag) return;
+  if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 6) drag.el.classList.add('drag');
+  const br = board.getBoundingClientRect();
+  drag.g.x = e.clientX - br.left - drag.dx;
+  drag.g.y = e.clientY - br.top - drag.dy;
+  klemmen(drag.g);
+  drag.el.style.left = drag.g.x + 'px'; drag.el.style.top = drag.g.y + 'px';
+}
+function ueberlapp(a, b) {
+  const ox = Math.min(a.x + gW(a), b.x + gW(b)) - Math.max(a.x, b.x);
+  const oy = Math.min(a.y + ch, b.y + ch) - Math.max(a.y, b.y);
+  return (ox > 0 && oy > 0) ? ox * oy : 0;
+}
+function up(e) {
+  if (!drag) return;
+  const { g, el, sx, sy, naht, karte } = drag; drag = null;
+  el.classList.remove('drag');
+  el.removeEventListener('pointermove', move);
+  el.removeEventListener('pointerup', up);
+  el.removeEventListener('pointercancel', up);
+
+  if (Math.hypot(e.clientX - sx, e.clientY - sy) <= 6) {
+    if (naht !== null) {
+      const key = g.id + '-' + naht, jetzt = Date.now();
+      if (letzterTipp.key === key && jetzt - letzterTipp.t < 450) {
+        letzterTipp = { key: null, t: 0 };
+        trenneNaht(g, naht);
+      } else letzterTipp = { key, t: jetzt };
+    } else if (karte !== null) vorlesen(g, karte);
+    return;
+  }
+
+  let ziel = null, best = cw * ch * .18;
+  groups.forEach(o => { if (o !== g) { const a = ueberlapp(g, o); if (a > best) { best = a; ziel = o; } } });
+  if (!ziel) { aufraeumen(g); return; }
+
+  const gr = RUNDEN[runde].groesse;
+  if (g.cards.length + ziel.cards.length > gr) {
+    el.classList.add('shake');
+    fb.className = 'schlecht';
+    fb.textContent = `Es passen nur ${ZAHLWORT[gr] || gr} Karten zusammen.`;
+    setTimeout(() => el.classList.remove('shake'), 400);
+    aufraeumen(g);
+    return;
+  }
+  const links = (g.x + gW(g) / 2) < (ziel.x + gW(ziel) / 2);
+  const L = links ? g : ziel, Rr = links ? ziel : g;
+  ziel.x = links ? ziel.x - gW(g) : ziel.x;
+  ziel.cards = L.cards.concat(Rr.cards);
+  ziel.seams = L.seams.concat([{ st: 'neu', fresh: true }], Rr.seams);
+  /* Beim Pfeil: Karten einer Gruppe in der eingegebenen Reihenfolge, damit der Pfeil passt */
+  if (RUNDEN[runde].zeichen === '→' && ziel.seams.every(s => s.st !== 'bad') &&
+      ziel.cards.every(k => k.set === ziel.cards[0].set)) {
+    const vorher = ziel.cards.map(k => k.pos).join();
+    ziel.cards.sort((a, b) => a.pos - b.pos);
+    if (ziel.cards.map(k => k.pos).join() !== vorher) ziel.seams.forEach(s => { if (s.st === 'neu') s.fresh = true; });
+  }
+  groups = groups.filter(x => x !== g);
+  klemmen(ziel);
+  fb.textContent = ''; fb.className = '';
+  render();
+  const zel = board.querySelector(`[data-id="${ziel.id}"]`);
+  if (zel) zel.style.zIndex = ++zTop;
+  aufraeumen(ziel);
+}
+
+function trenneNaht(g, i) {
+  if (busy) return;
+  const s = g.seams[i];
+  if (s.st === 'ok') {
+    fb.className = 'gut';
+    fb.textContent = 'Grüne Streifen sind richtig und bleiben kleben.';
+    return;
+  }
+  busy = true;
+  const t = board.querySelector(`[data-id="${g.id}"] .tape[data-i="${i}"]`);
+  if (t) t.classList.add('weg');
+  setTimeout(() => {
+    const rechts = { id: ++gid, cards: g.cards.slice(i + 1), seams: g.seams.slice(i + 1), x: g.x + (i + 1) * cw, y: g.y };
+    g.cards = g.cards.slice(0, i + 1); g.seams = g.seams.slice(0, i);
+    groups.push(rechts);
+    render();
+    void board.offsetWidth;
+    rechts.x += cw * .4; rechts.y += ch * .25; klemmen(rechts);
+    const el = board.querySelector(`[data-id="${rechts.id}"]`);
+    if (el) { el.classList.add('spring'); el.style.left = rechts.x + 'px'; el.style.top = rechts.y + 'px'; }
+    setTimeout(() => { if (el) el.classList.remove('spring'); aufraeumen(rechts); busy = false; }, 650);
+    fb.textContent = ''; fb.className = '';
+  }, 420);
+}
+
+function aufraeumen(fest) {
+  const weg = groups.filter(o => o !== fest && ueberlapp(o, fest) > 0);
+  if (!weg.length) return;
+  const belegt = groups.filter(o => !weg.includes(o)).map(o => ({ x: o.x, y: o.y, w: gW(o) }));
+  weg.forEach(o => {
+    const p = freierPlatz(gW(o), o.x, o.y, belegt);
+    belegt.push({ x: p.x, y: p.y, w: gW(o) });
+    o.x = p.x; o.y = p.y;
+    const el = board.querySelector(`[data-id="${o.id}"]`);
+    if (el) { el.classList.add('spring'); el.style.left = o.x + 'px'; el.style.top = o.y + 'px';
+      setTimeout(() => el.classList.remove('spring'), 700); }
+  });
+}
+
+function freierPlatz(w, x0, y0, belegt) {
+  let best = null, bd = Infinity;
+  const m = Math.round(gap * .5);
+  for (let y = 6; y <= H - ch - 6; y += 10) {
+    for (let x = 6; x <= W - w - 6; x += 10) {
+      const frei = belegt.every(r => x + w + m <= r.x || r.x + r.w + m <= x || y + ch + m <= r.y || r.y + ch + m <= y);
+      if (!frei) continue;
+      const d = (x - x0) ** 2 + (y - y0) ** 2;
+      if (d < bd) { bd = d; best = { x, y }; }
+    }
+  }
+  return best || { x: Math.max(0, Math.min(W - w, x0 + 30)), y: Math.max(0, Math.min(H - ch, y0 + 40)) };
+}
+
+btnPruefen.addEventListener('click', pruefen);
+function pruefen() {
+  if (busy) return;
+  let neu = 0, ok = 0, bad = 0;
+  groups.forEach(g => g.seams.forEach((s, i) => {
+    if (s.st !== 'neu') return;
+    neu++;
+    const richtig = g.cards[i].set === g.cards[i + 1].set;
+    s.st = richtig ? 'ok' : 'bad';
+    richtig ? ok++ : bad++;
+    const t = board.querySelector(`[data-id="${g.id}"] .tape[data-i="${i}"]`);
+    if (t) { t.classList.remove('neu'); t.classList.add(richtig ? 'ok' : 'bad'); }
+  }));
+  if (neu === 0) {
+    fb.className = 'schlecht';
+    fb.textContent = 'Klebe zuerst Karten zusammen.';
+    return;
+  }
+  busy = true; btnPruefen.disabled = true;
+  fehler += bad; zeigeStand();
+  fb.className = bad ? 'schlecht' : 'gut';
+  fb.textContent = bad
+    ? `${ok} richtig, ${bad} falsch.`
+    : `Super! ${ok} richtige Verbindung${ok === 1 ? '' : 'en'}.`;
+  if (bad) {
+    setTimeout(() => board.querySelectorAll('.tape.bad').forEach(t => t.classList.add('dissolve')), 900);
+    setTimeout(trennen, 1750);
+  } else {
+    setTimeout(() => { render(); fertig(); }, 400);
+  }
+}
+
+function trennen() {
+  const neu = [], bewegen = [];
+  groups.forEach(g => {
+    if (!g.seams.some(s => s.st === 'bad')) { neu.push(g); return; }
+    let start = 0, erstes = true;
+    const teil = (a, b) => {
+      const ng = { id: erstes ? g.id : ++gid, cards: g.cards.slice(a, b + 1), seams: g.seams.slice(a, b), x: g.x + a * cw, y: g.y };
+      neu.push(ng);
+      if (!erstes) bewegen.push(ng);
+      erstes = false;
+    };
+    g.seams.forEach((s, i) => { if (s.st === 'bad') { teil(start, i); start = i + 1; } });
+    teil(start, g.cards.length - 1);
+  });
+  groups = neu;
+  const belegt = groups.filter(g => !bewegen.includes(g)).map(g => ({ x: g.x, y: g.y, w: gW(g) }));
+  const ziele = bewegen.map(g => {
+    const p = freierPlatz(gW(g), g.x, g.y + ch * .6, belegt);
+    belegt.push({ x: p.x, y: p.y, w: gW(g) });
+    return p;
+  });
+  render();
+  void board.offsetWidth;
+  bewegen.forEach((g, k) => {
+    const el = board.querySelector(`[data-id="${g.id}"]`);
+    g.x = ziele[k].x; g.y = ziele[k].y;
+    if (el) { el.classList.add('spring'); el.style.left = g.x + 'px'; el.style.top = g.y + 'px'; }
+  });
+  setTimeout(() => { board.querySelectorAll('.spring').forEach(e => e.classList.remove('spring')); fertig(); }, 700);
+}
+
+function fertig() {
+  busy = false; btnPruefen.disabled = false;
+  if (!groups.every(istVoll)) return;
+  btnPruefen.disabled = true;
+  const p = Math.max(0, maxVerb(runde) - fehler);
+  punkte[runde] = p;
+  fb.className = 'gut'; fb.textContent = 'Alles richtig verklebt!';
+  const stern = p === maxVerb(runde) ? ' <span class="stern">★ fehlerfrei</span>' : '';
+  let h;
+  if (runde < RUNDEN.length - 1) {
+    h = `<h2>Runde ${runde + 1} geschafft!</h2>
+      <div class="gross">${p}/${maxVerb(runde)} richtig${stern}</div>
+      <button id="weiter">Nächste Runde ➜</button>`;
+  } else {
+    tEnde = Date.now();
+    const ges = punkte.reduce((a, b) => a + b, 0);
+    let max = 0; RUNDEN.forEach((_, i) => max += maxVerb(i));
+    h = `<h2>Geschafft! 🎉</h2>
+      ${RUNDEN.length > 1 ? punkte.map((q, i) => `<div class="zeile">Runde ${i + 1}: <b>${q}/${maxVerb(i)}</b> richtig${q === maxVerb(i) ? ' <span class="stern">★</span>' : ''}</div>`).join('') : ''}
+      <div class="gross">Gesamt: ${ges}/${max} richtig${ges === max ? ' <span class="stern">★</span>' : ''}</div>
+      <div class="gross">⏱ Zeit: ${mmss(tEnde - t0)}</div>
+      <button id="nochmal">Nochmal spielen</button>`;
+  }
+  setTimeout(() => {
+    document.getElementById('modal').innerHTML = h;
+    document.getElementById('overlay').classList.add('zeigen');
+    konfetti();
+    const w = document.getElementById('weiter');
+    if (w) w.onclick = () => starteRunde(runde + 1);
+    const n = document.getElementById('nochmal');
+    if (n) n.onclick = () => { punkte = []; t0 = null; tEnde = null; starteRunde(0); };
+  }, 500);
+}
+
+function konfetti() {
+  const cv = document.getElementById('konfetti'), cx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const farben = ['#FFD54F', '#4FC3F7', '#81C784', '#F06292', '#BA68C8', '#FF8A65'];
+  const teile = Array.from({ length: 140 }, () => ({
+    x: innerWidth / 2 + (Math.random() - .5) * 200, y: innerHeight * .4,
+    vx: (Math.random() - .5) * 16, vy: -Math.random() * 14 - 4, r: Math.random() * 6 + 4,
+    f: farben[Math.floor(Math.random() * farben.length)], a: Math.random() * 6, va: (Math.random() - .5) * .3 }));
+  let n = 0;
+  (function schritt() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    teile.forEach(t => {
+      t.vy += .35; t.x += t.vx; t.y += t.vy; t.vx *= .99; t.a += t.va;
+      cx.save(); cx.translate(t.x, t.y); cx.rotate(t.a); cx.fillStyle = t.f;
+      cx.fillRect(-t.r, -t.r / 2, t.r * 2, t.r); cx.restore();
+    });
+    if (++n < 160) requestAnimationFrame(schritt); else cx.clearRect(0, 0, cv.width, cv.height);
+  })();
+}
+
+window.addEventListener('resize', () => {
+  const aw = W, ah = H;
+  masse();
+  if (Math.abs(aw - W) < 2 && Math.abs(ah - H) < 2) return;
+  groups.forEach(g => { g.x = g.x * W / aw; g.y = g.y * H / ah; klemmen(g); });
+  render();
+});
+
+const intro = document.getElementById('intro');
+document.getElementById('losgehts').onclick = () => intro.classList.remove('zeigen');
+document.getElementById('hilfe').onclick = () => intro.classList.add('zeigen');
+
+(function () {
+  const b = document.getElementById('blasen');
+  for (let i = 0; i < 26; i++) {
+    const s = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.animationDuration = (14 + Math.random() * 18) + 's';
+    s.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(s);
+  }
+})();
+
+starteRunde(0);
+<\/script>
+</body>
+</html>
+</script>
+<script type="text/plain" id="vorlage-memory"><!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; overflow: hidden;
+    height: 100vh; height: 100dvh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%); position: relative; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; height: 100%; max-width: 1400px; margin: 0 auto; padding: 12px 14px 8px;
+    display: flex; flex-direction: column; gap: 8px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 55%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 8px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  .titel { flex: 1 1 260px; position: relative; }
+  .titel .schule { font-size: 12px; opacity: .85; letter-spacing: .5px; position: absolute; left: 0; bottom: 100%; margin-bottom: 1px; white-space: nowrap; }
+  .titel h1 { margin: 0; font-size: clamp(18px, 2.3vw, 26px); }
+  header.mitschule { padding-top: 20px; padding-bottom: 12px; }
+  .chips { display: flex; gap: 6px; align-items: center; }
+  .chip { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.45); font-size: 16px; }
+  .chip.aktiv { background: #fff; color: var(--h1); border-color: #fff; transform: scale(1.12); }
+  .chip.fertig { background: #FFD54F; color: #5D4037; border-color: #FFD54F; }
+  .uhr { background: rgba(0,0,0,.22); border-radius: 999px; padding: 6px 14px; font-size: 20px; font-weight: bold;
+    font-variant-numeric: tabular-nums; min-width: 104px; text-align: center; }
+
+  .leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .info { font-size: 17px; flex: 1 1 300px; }
+  #feedback { font-size: 16px; font-weight: bold; min-height: 20px; }
+  #feedback.gut { color: #2E7D32; } #feedback.schlecht { color: #C62828; }
+  .stand { display: flex; gap: 8px; font-size: 15px; }
+  .pill { background: #fff; border: 2px solid #ddd; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+  .pill b.rot { color: #C62828; }
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.15);
+    padding: 9px 26px; font-size: 18px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.hilfe { width: 38px; height: 38px; padding: 0; font-size: 20px; flex: none; background: rgba(255,255,255,.18);
+    border: 2px solid rgba(255,255,255,.55); box-shadow: none; }
+
+  #board { flex: 1; min-height: 0; position: relative; border-radius: 18px; overflow: hidden;
+    border: 2px solid var(--rand); box-shadow: inset 0 2px 10px rgba(0,0,0,.06);
+    background-color: #fffdf7;
+    background-image: radial-gradient(#dcdcd4 1.2px, transparent 1.2px); background-size: 24px 24px; }
+
+  footer { text-align: right; font-size: 12px; color: #333; min-height: 2px; }
+
+  #overlay, #intro { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 50;
+    background: rgba(255,255,255,.5); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+  #overlay.zeigen, #intro.zeigen { display: flex; }
+  .modal { background: #fff; border-radius: 22px; padding: 22px 30px 24px; min-width: 300px; max-width: 92vw; text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,.3); border-top: 8px solid var(--b2); animation: rein .45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes rein { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h2 { margin: 0 0 10px; font-size: 28px; color: var(--h1); }
+  .modal .zeile { font-size: 20px; margin: 6px 0; }
+  .modal .gross { font-size: 24px; font-weight: bold; margin: 12px 0 4px; }
+  .modal .stern { color: #F9A825; }
+  .modal button { margin-top: 14px; }
+  .anleitung { width: 620px; max-height: 92vh; overflow: auto; text-align: left; }
+  .anleitung h2 { text-align: center; }
+  .schritt { display: flex; gap: 14px; align-items: flex-start; padding: 10px 12px; margin: 8px 0; border-radius: 14px; background: var(--hell); font-size: 18px; line-height: 1.35; }
+  .schritt .nr { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--b2); color: #fff; font-weight: bold;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .demo { display: flex; justify-content: center; align-items: center; margin: 4px 0 10px; position: relative; }
+  .demo .dk { width: 92px; height: 58px; border: 2px solid #37474F; border-radius: 10px; background: #fff; font-weight: bold; font-size: 20px;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 #cfd8dc; }
+  .demo .dt { position: absolute; width: 34px; height: 30px; transform: rotate(-10deg); background: rgba(245,232,180,.92);
+    display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .farbe { display: inline-block; padding: 0 7px; border-radius: 5px; color: #fff; font-weight: bold; }
+  .anleitung .knopf { text-align: center; }
+  .anleitung button { font-size: 22px; padding: 11px 40px; }
+  #konfetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
+  .frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; font-size: .9em; vertical-align: middle; }
+  .frac > span:first-child { border-bottom: 2.5px solid #111; padding: 0 4px 2px; }
+  .frac > span:last-child { padding: 2px 4px 0; }
+  #board { display: grid; align-content: center; justify-content: center; padding: 10px; }
+  .mk { width: var(--cw); height: var(--ch); perspective: 900px; cursor: pointer; user-select: none; -webkit-user-select: none; position: relative; }
+  .mk .innen { position: absolute; inset: 0; transition: transform .45s; transform-style: preserve-3d; }
+  .mk.offen .innen, .mk.gefunden .innen { transform: rotateY(180deg); }
+  .mk .seite { position: absolute; inset: 0; border-radius: 12px; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 rgba(0,0,0,.18), 0 5px 10px rgba(0,0,0,.12); }
+  .mk .ruecken { background: linear-gradient(135deg, var(--h1), var(--h3)); border: 3px solid #fff; color: rgba(255,255,255,.9);
+    font-size: calc(var(--ch) * .45); font-weight: bold; overflow: hidden; }
+  .mk .ruecken::before { content: ""; position: absolute; inset: 6px; border-radius: 8px; border: 2px dashed rgba(255,255,255,.35); }
+  .mk .vorne { transform: rotateY(180deg); background: linear-gradient(180deg, #ffffff 0%, #f2f5fa 100%); border: 2px solid #37474F;
+    font-size: var(--fs); font-weight: bold; text-align: center; padding: 0 5px; overflow: hidden; white-space: nowrap; }
+  .mk.lang .vorne { font-size: var(--fsl); }
+  .mk.sehrlang .vorne { font-size: var(--fsx); white-space: normal; line-height: 1.1; }
+  .mk.bildkarte .vorne { padding: 3px; background: #fff; }
+  .mk.bildkarte img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; pointer-events: none; -webkit-user-drag: none; }
+  .mk.spricht .vorne::after { content: "🔊"; position: absolute; right: 4px; top: 2px; font-size: calc(var(--ch) * .18); opacity: .55; }
+  .mk.gefunden .vorne { border-color: #2E7D32; background: linear-gradient(180deg, #F1F8E9, #DCEDC8); }
+  .mk.gefunden { animation: pop .45s; cursor: default; }
+  .mk.falsch .vorne { border-color: #D32F2F; background: #FFEBEE; }
+  .mk.redet .vorne { outline: 3px solid #FFB300; outline-offset: -1px; }
+  .mk:not(.offen):not(.gefunden):hover .ruecken { filter: brightness(1.12); }
+  @keyframes pop { 50% { scale: 1.08; } }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <div class="titel" id="titelbox">
+      <div class="schule" id="schule"></div>
+      <h1 id="titel">Memory</h1>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="uhr" id="uhr">⏱ 00:00</div>
+    <button class="hilfe" id="hilfe" title="Anleitung">?</button>
+  </header>
+  <div class="leiste">
+    <div class="info" id="info"></div>
+    <div id="feedback"></div>
+    <div class="stand" id="stand"></div>
+  </div>
+  <div id="board"></div>
+  <footer id="fuss"></footer>
+</div>
+<div id="overlay"><div class="modal" id="modal"></div></div>
+<div id="intro" class="zeigen"><div class="modal anleitung">
+  <h2>So funktioniert Memory</h2>
+  <div class="schritt"><div class="nr">1</div><div><b>Aufdecken:</b> Tippe auf eine Karte. Sie dreht sich um. Decke so <b id="anzahlText">zwei</b> Karten auf.</div></div>
+  <div class="schritt"><div class="nr">2</div><div><b>Passt es?</b> Gehören die Karten zusammen, werden sie <span class="farbe" style="background:#2E7D32">grün</span> und bleiben offen. Sonst drehen sie sich wieder um. Merke dir, wo sie liegen!</div></div>
+  <div class="schritt" id="sprechschritt" style="display:none"><div class="nr">🔊</div><div><b>Vorlesen:</b> Karten mit dem Lautsprecher werden beim Aufdecken vorgelesen. Tippe noch einmal darauf, um sie erneut zu hören.</div></div>
+  <div class="schritt"><div class="nr">3</div><div><b>Ziel:</b> <span id="zielsatz">Finde alle Paare.</span> Schaffst du es mit wenigen Zügen?</div></div>
+  <div class="knopf"><button id="losgehts">Los geht's! ➜</button></div>
+</div></div>
+<canvas id="konfetti"></canvas>
+
+<script type="application/json" id="spieldaten">/*__DATEN__*/<\/script>
+<script>
+const FARBEN = {
+  tuerkis: { r: ['#00585C', '#00897B', '#26C6DA', '#84E3EC'], h: ['#00616A', '#00838F', '#1FB5C6'], b: ['#26B5A6', '#00897B', '#00695C'], hell: '#EAF8F8', rand: '#C5E8EA' },
+  rot:     { r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' }
+};
+function ladeDaten(ersatz) {
+  try { const d = JSON.parse(document.getElementById('spieldaten').textContent); if (d) return d; } catch (e) {}
+  return ersatz;
+}
+function basisEinrichten(D) {
+  const f = FARBEN[D.farbe] || FARBEN.rot, s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c));
+  f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c));
+  s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand);
+  document.title = D.titel || document.title;
+  document.getElementById('titel').textContent = D.titel || document.title;
+  document.getElementById('schule').textContent = D.schule || '';
+  if (D.schule) document.querySelector('header').classList.add('mitschule');
+  if (D.name) document.getElementById('fuss').textContent =
+    'Erstellt von ' + D.name + (D.monat ? ' (' + D.monat + ')' : '') + (D.ki ? ' mit freundlicher Unterstützung von ' + D.ki : '') + '.';
+  const intro = document.getElementById('intro');
+  document.getElementById('losgehts').onclick = () => intro.classList.remove('zeigen');
+  document.getElementById('hilfe').onclick = () => intro.classList.add('zeigen');
+  const b = document.getElementById('blasen');
+  for (let i = 0; i < 26; i++) {
+    const sp = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    sp.style.width = sp.style.height = d + 'px';
+    sp.style.left = (Math.random() * 100) + '%';
+    sp.style.animationDuration = (14 + Math.random() * 18) + 's';
+    sp.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(sp);
+  }
+}
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function fmt(t) {
+  let h = esc(String(t).trim());
+  h = h.replace(/(\d+(?:,\d+)?)\s*\/\s*(\d+(?:,\d+)?)/g, '<span class="frac"><span>$1</span><span>$2</span></span>');
+  h = h.replace(/\s*\*\s*/g, '&nbsp;·&nbsp;');
+  h = h.replace(/(\d) (%|‰)/g, '$1&#8239;$2');
+  return h;
+}
+function laenge(t) { if (t && typeof t === 'object') return 0; return String(t).replace(/\d+\s*\/\s*\d+/g, 'xx').replace(/\s+/g, ' ').trim().length; }
+const istBild = t => t && typeof t === 'object' && t.bild;
+function karteHTML(t) { return istBild(t) ? `<img src="${t.bild}" alt="">` : fmt(t); }
+function sprechText(t) { return istBild(t) ? '' : String(t).replace(/\*/g, ' mal ').trim(); }
+const mmss = ms => { const s = Math.floor(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+
+function vorlesen(text, sprache, el) {
+  if (!text || !sprache || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = sprache; u.rate = .9;
+    const st = speechSynthesis.getVoices().filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(sprache.slice(0, 2).toLowerCase()));
+    const genau = st.find(v => v.lang.replace('_', '-').toLowerCase() === sprache.toLowerCase());
+    if (genau || st[0]) u.voice = genau || st[0];
+    if (el) { el.classList.add('redet'); u.onend = u.onerror = () => el.classList.remove('redet'); setTimeout(() => el.classList.remove('redet'), 4000); }
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); } catch (e) {} }
+
+function konfetti() {
+  const cv = document.getElementById('konfetti'), cx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const farben = ['#FFD54F', '#4FC3F7', '#81C784', '#F06292', '#BA68C8', '#FF8A65'];
+  const teile = Array.from({ length: 140 }, () => ({
+    x: innerWidth / 2 + (Math.random() - .5) * 200, y: innerHeight * .4,
+    vx: (Math.random() - .5) * 16, vy: -Math.random() * 14 - 4, r: Math.random() * 6 + 4,
+    f: farben[Math.floor(Math.random() * farben.length)], a: Math.random() * 6, va: (Math.random() - .5) * .3 }));
+  let n = 0;
+  (function schritt() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    teile.forEach(t => {
+      t.vy += .35; t.x += t.vx; t.y += t.vy; t.vx *= .99; t.a += t.va;
+      cx.save(); cx.translate(t.x, t.y); cx.rotate(t.a); cx.fillStyle = t.f;
+      cx.fillRect(-t.r, -t.r / 2, t.r * 2, t.r); cx.restore();
+    });
+    if (++n < 160) requestAnimationFrame(schritt); else cx.clearRect(0, 0, cv.width, cv.height);
+  })();
+}
+function zeigeModal(html, knoepfe) {
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('overlay').classList.add('zeigen');
+  konfetti();
+  Object.entries(knoepfe || {}).forEach(([id, fn]) => { const b = document.getElementById(id); if (b) b.onclick = fn; });
+}
+
+const D = ladeDaten({ titel: 'Memory', schule: '', farbe: 'rot', name: '', runden: [
+  { groesse: 2, sprachen: ['en-GB', ''], gruppen: [['dog', 'Hund'], ['cat', 'Katze'], ['house', 'Haus'], ['tree', 'Baum']] }] });
+basisEinrichten(D);
+const ZAHLWORT = ['', 'eine', 'zwei', 'drei'];
+const RUNDEN = D.runden.map(r => ({ groesse: r.groesse, sprachen: r.sprachen || [], gruppen: r.gruppen }));
+if (RUNDEN.some(r => r.sprachen.some(x => x))) document.getElementById('sprechschritt').style.display = 'flex';
+const nurPaare = RUNDEN.every(r => r.groesse === 2);
+document.getElementById('anzahlText').textContent = nurPaare ? 'zwei' : 'zwei oder drei (steht oben)';
+document.getElementById('zielsatz').textContent = (nurPaare ? 'Finde alle Paare' : 'Finde alle Gruppen') +
+  (RUNDEN.length > 1 ? ` in ${RUNDEN.length} Runden.` : '.');
+
+const board = document.getElementById('board'), fb = document.getElementById('feedback');
+let runde = 0, karten = [], offen = [], busy = false, zuege = 0, ergebnisse = [], t0 = null, tEnde = null;
+
+setInterval(() => { document.getElementById('uhr').textContent = '⏱ ' + mmss(t0 ? (tEnde || Date.now()) - t0 : 0); }, 250);
+
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function masse() {
+  const W = board.clientWidth - 20, H = board.clientHeight - 20, n = karten.length;
+  const opt = [];
+  for (let c = n; c >= 2; c--) {
+    const rows = Math.ceil(n / c), gap = 12;
+    opt.push({ c, gap, leer: c * rows - n, cw: Math.min((W - gap * (c - 1)) / c, ((H - gap * (rows - 1)) / rows) / .64, 230) });
+  }
+  const max = Math.max(...opt.map(o => o.cw));
+  const best = opt.filter(o => o.cw >= max * .9).sort((x, y) => x.leer - y.leer || y.cw - x.cw)[0];
+  const cw = Math.floor(best.cw), ch = Math.round(cw * .64), s = board.style;
+  s.gridTemplateColumns = `repeat(${best.c}, ${cw}px)`; s.gap = best.gap + 'px';
+  s.setProperty('--cw', cw + 'px'); s.setProperty('--ch', ch + 'px');
+  s.setProperty('--fs', Math.round(cw * .2) + 'px'); s.setProperty('--fsl', Math.round(cw * .15) + 'px'); s.setProperty('--fsx', Math.round(cw * .12) + 'px');
+}
+
+function starteRunde(r) {
+  runde = r; offen = []; busy = false; zuege = 0;
+  document.getElementById('overlay').classList.remove('zeigen');
+  fb.textContent = ''; fb.className = '';
+  const R = RUNDEN[r];
+  karten = [];
+  R.gruppen.forEach((g, si) => g.forEach((t, pos) => {
+    const n = laenge(t);
+    karten.push({ t, set: si, sprache: !istBild(t) && R.sprachen[pos] ? R.sprachen[pos] : '', bild: !!istBild(t),
+      lang: n > 6 && n <= 10, sehrlang: n > 10, offen: false, gefunden: false });
+  }));
+  shuffle(karten);
+  document.getElementById('info').innerHTML = `<b>Runde ${r + 1}:</b> ${R.groesse} Karten gehören zusammen.`;
+  document.getElementById('chips').innerHTML = RUNDEN.map((_, i) =>
+    `<div class="chip ${i < r ? 'fertig' : ''} ${i === r ? 'aktiv' : ''}">${i < r ? '✓' : i + 1}</div>`).join('');
+  board.innerHTML = karten.map((k, i) => `<div class="mk${k.lang ? ' lang' : ''}${k.sehrlang ? ' sehrlang' : ''}${k.bild ? ' bildkarte' : ''}${k.sprache ? ' spricht' : ''}" data-i="${i}">
+      <div class="innen"><div class="seite ruecken">?</div><div class="seite vorne">${karteHTML(k.t)}</div></div></div>`).join('');
+  masse();
+  zeigeStand();
+}
+function zeigeStand() {
+  const R = RUNDEN[runde], gef = karten.filter(k => k.gefunden).length / R.groesse;
+  document.getElementById('stand').innerHTML =
+    `<span class="pill">Gefunden: <b>${gef}/${R.gruppen.length}</b></span><span class="pill">Züge: <b>${zuege}</b></span>`;
+}
+
+board.addEventListener('click', e => {
+  const el = e.target.closest('.mk'); if (!el) return;
+  const k = karten[+el.dataset.i];
+  if (k.offen || k.gefunden) { vorlesen(sprechText(k.t), k.sprache, el); return; }
+  if (busy) return;
+  if (!t0) t0 = Date.now();
+  k.offen = true; el.classList.add('offen');
+  offen.push(+el.dataset.i);
+  if (k.sprache) setTimeout(() => vorlesen(sprechText(k.t), k.sprache, el), 250);
+  const gr = RUNDEN[runde].groesse;
+  if (offen.length < gr) return;
+  zuege++; busy = true;
+  const passt = offen.every(i => karten[i].set === karten[offen[0]].set);
+  const els = offen.map(i => board.querySelector(`.mk[data-i="${i}"]`));
+  if (passt) {
+    setTimeout(() => {
+      offen.forEach(i => { karten[i].gefunden = true; karten[i].offen = false; });
+      els.forEach(x => { x.classList.remove('offen'); x.classList.add('gefunden'); });
+      offen = []; busy = false;
+      fb.className = 'gut'; fb.textContent = 'Passt!';
+      zeigeStand(); pruefeFertig();
+    }, 550);
+  } else {
+    setTimeout(() => els.forEach(x => x.classList.add('falsch')), 600);
+    setTimeout(() => {
+      offen.forEach(i => { karten[i].offen = false; });
+      els.forEach(x => x.classList.remove('offen', 'falsch'));
+      offen = []; busy = false;
+      fb.className = 'schlecht'; fb.textContent = 'Passt nicht.';
+      zeigeStand();
+    }, 1700);
+  }
+  zeigeStand();
+});
+
+function pruefeFertig() {
+  if (!karten.every(k => k.gefunden)) return;
+  ergebnisse[runde] = zuege;
+  const R = RUNDEN[runde];
+  if (runde < RUNDEN.length - 1) {
+    setTimeout(() => zeigeModal(`<h2>Runde ${runde + 1} geschafft!</h2>
+      <div class="gross">${R.gruppen.length} ${R.groesse === 2 ? 'Paare' : 'Gruppen'} in ${zuege} Zügen</div>
+      <button id="weiter">Nächste Runde ➜</button>`, { weiter: () => starteRunde(runde + 1) }), 500);
+  } else {
+    tEnde = Date.now();
+    const ges = ergebnisse.reduce((a, b) => a + b, 0);
+    setTimeout(() => zeigeModal(`<h2>Geschafft! 🎉</h2>
+      ${RUNDEN.length > 1 ? ergebnisse.map((z, i) => `<div class="zeile">Runde ${i + 1}: <b>${z}</b> Züge</div>`).join('') : ''}
+      <div class="gross">Züge insgesamt: ${ges}</div>
+      <div class="gross">⏱ Zeit: ${mmss(tEnde - t0)}</div>
+      <button id="nochmal">Nochmal spielen</button>`,
+      { nochmal: () => { ergebnisse = []; t0 = null; tEnde = null; starteRunde(0); } }), 500);
+  }
+}
+
+window.addEventListener('resize', masse);
+starteRunde(0);
+<\/script>
+</body>
+</html>
+</script>
+<script>
+const FARBEN = {
+  rot:     { name: 'Rot',    r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { name: 'Grün',   r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { name: 'Blau',   r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { name: 'Pink',   r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' },
+};
+const SPRACHEN = [['', 'nicht vorlesen'], ['de-DE', 'Deutsch'], ['en-GB', 'Englisch'], ['fr-FR', 'Französisch']];
+const ZEICHEN = ['=', '→', '≙'];
+const MAXZEILEN = { 2: 7, 3: 5 };
+const SCHULE = 'Emil-Petri-Schule Arnstadt';
+const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const $ = id => document.getElementById(id);
+
+const leereRunde = n => ({ groesse: n, zeichen: '=', sprachen: Array(n).fill(''), gruppen: [Array(n).fill(''), Array(n).fill(''), Array(n).fill('')] });
+let D = { spielart: 'kleben', titel: 'Was gehört zusammen?', farbe: 'rot', name: '', runden: [leereRunde(2)] };
+const STANDARDTITEL = { kleben: 'Was gehört zusammen?', memory: 'Memory' };
+function spielartSetzen(a) {
+  const alt = D.spielart; D.spielart = a;
+  document.body.classList.toggle('memory', a === 'memory');
+  document.querySelectorAll('#spielart button').forEach(b => b.classList.toggle('an', b.dataset.a === a));
+  const t = $('titel').value.trim();
+  if (alt !== a && (!t || t === STANDARDTITEL[alt])) { $('titel').value = STANDARDTITEL[a]; D.titel = STANDARDTITEL[a]; }
+  zeichneRunden();
+}
+$('spielart').addEventListener('click', e => { const b = e.target.closest('button'); if (b) spielartSetzen(b.dataset.a); });
+
+/* ---------- Farbe ---------- */
+function farbeSetzen(k) {
+  D.farbe = k;
+  const f = FARBEN[k], s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c));
+  f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c));
+  s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand);
+  document.querySelectorAll('#farbwahl button').forEach(b => b.classList.toggle('an', b.dataset.k === k));
+}
+$('farbwahl').innerHTML = Object.entries(FARBEN).map(([k, f]) =>
+  `<button type="button" data-k="${k}"><span class="kreis" style="background:linear-gradient(135deg,${f.r[1]},${f.r[2]})"></span>${f.name}</button>`).join('');
+$('farbwahl').addEventListener('click', e => { const b = e.target.closest('button'); if (b) farbeSetzen(b.dataset.k); });
+
+/* ---------- Runden ---------- */
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+const istBild = t => t && typeof t === 'object' && t.bild;
+
+function zelleHTML(t, ki) {
+  if (istBild(t)) return `<div class="zelle" data-k="${ki}"><div class="bild"><img src="${t.bild}" alt=""></div>
+    <button class="bildknopf" data-akt="bildWeg" title="Bild entfernen">✕</button></div>`;
+  return `<div class="zelle" data-k="${ki}"><input type="text" data-k="${ki}" value="${esc(t)}" placeholder="Karte ${ki + 1}">
+    <button class="bildknopf" data-akt="bild" title="Bild statt Text">🖼</button></div>`;
+}
+
+function zeichneRunden() {
+  $('runden').innerHTML = D.runden.map((r, ri) => {
+    const max = MAXZEILEN[r.groesse], voll = r.gruppen.length >= max, letzte = ri === D.runden.length - 1;
+    return `
+    <div class="runde" data-r="${ri}">
+      <div class="rkopf">
+        <b>Runde ${ri + 1}</b>
+        <label>Karten, die zusammengehören:
+          <select data-feld="groesse">${[2, 3].map(n => `<option ${n === r.groesse ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+        <label class="nurKleben">Zeichen auf dem Klebestreifen:
+          <select data-feld="zeichen">${ZEICHEN.map(z => `<option ${z === r.zeichen ? 'selected' : ''}>${z}</option>`).join('')}</select></label>
+        ${D.runden.length > 1 ? `<button class="weg" data-akt="rundeWeg" title="Runde löschen">🗑</button>` : ''}
+      </div>
+      <div class="rinhalt">
+        <div class="aufgabe">Im Spiel steht: <b>Runde ${ri + 1}: ${r.groesse} Karten gehören zusammen.</b>
+          ${r.zeichen === '→' && D.spielart !== 'memory' ? ' Beim Pfeil steht die erste Karte einer Zeile im Spiel immer links.' : ''}</div>
+        <div class="kopfzeile"><span class="gnr">0.</span>
+          ${r.sprachen.map((s, ki) => (ki ? '<span class="verb">=</span>' : '') +
+            `<label>🔊 <select data-sprache="${ki}">${SPRACHEN.map(([c, n]) => `<option value="${c}" ${c === s ? 'selected' : ''}>${n}</option>`).join('')}</select></label>`).join('')}
+          <span class="platz"></span></div>
+        ${r.gruppen.map((g, gi) => `
+          <div class="zeile" data-g="${gi}">
+            <span class="gnr">${gi + 1}.</span>
+            ${g.map((t, ki) => (ki ? `<span class="verb">${r.zeichen}</span>` : '') + zelleHTML(t, ki)).join('')}
+            <button class="weg" data-akt="gruppeWeg" title="Zeile löschen">✕</button>
+          </div>`).join('')}
+        ${voll
+          ? `<div class="voll">Mehr Zeilen passen nicht in eine Runde (höchstens ${max}).${letzte ? ' Weiter geht es mit „＋ Weitere Runde“.' : ''}</div>`
+          : `<button class="hell" data-akt="gruppeNeu" style="margin-top:6px">＋ Zeile</button>
+             <span class="klein" style="margin-left:8px">noch ${max - r.gruppen.length} Zeile${max - r.gruppen.length === 1 ? '' : 'n'} möglich</span>`}
+        <div class="meld"></div>
+      </div>
+    </div>`; }).join('');
+  pruefeEingaben(false);
+}
+
+$('runden').addEventListener('input', e => {
+  const inp = e.target; if (inp.tagName !== 'INPUT') return;
+  const r = +inp.closest('.runde').dataset.r, g = +inp.closest('.zeile').dataset.g, k = +inp.dataset.k;
+  D.runden[r].gruppen[g][k] = inp.value;
+  pruefeEingaben(false);
+});
+$('runden').addEventListener('change', e => {
+  const sel = e.target; if (sel.tagName !== 'SELECT') return;
+  const r = D.runden[+sel.closest('.runde').dataset.r];
+  if (sel.dataset.sprache !== undefined) { r.sprachen[+sel.dataset.sprache] = sel.value; return; }
+  if (sel.dataset.feld === 'groesse') {
+    r.groesse = +sel.value;
+    const pass = a => { const n = a.slice(0, r.groesse); while (n.length < r.groesse) n.push(''); return n; };
+    r.gruppen = r.gruppen.map(pass);
+    r.sprachen = pass(r.sprachen);
+    if (r.gruppen.length > MAXZEILEN[r.groesse]) {
+      r.gruppen = r.gruppen.slice(0, MAXZEILEN[r.groesse]);
+      meldung('Bei ' + r.groesse + ' Karten passen höchstens ' + MAXZEILEN[r.groesse] + ' Zeilen in eine Runde. Die letzten Zeilen wurden entfernt.', false);
+    }
+  } else r.zeichen = sel.value;
+  zeichneRunden();
+});
+
+let bildZiel = null;
+$('runden').addEventListener('click', e => {
+  const b = e.target.closest('button[data-akt]'); if (!b) return;
+  const ri = +b.closest('.runde').dataset.r, r = D.runden[ri];
+  const akt = b.dataset.akt;
+  if (akt === 'bild') { bildZiel = { r: ri, g: +b.closest('.zeile').dataset.g, k: +b.closest('.zelle').dataset.k }; $('bilddatei').click(); return; }
+  if (akt === 'bildWeg') { r.gruppen[+b.closest('.zeile').dataset.g][+b.closest('.zelle').dataset.k] = ''; }
+  if (akt === 'gruppeNeu') { if (r.gruppen.length < MAXZEILEN[r.groesse]) r.gruppen.push(Array(r.groesse).fill('')); }
+  if (akt === 'rundeNeu') return neueRunde();
+  if (akt === 'gruppeWeg') { if (r.gruppen.length > 2) r.gruppen.splice(+b.closest('.zeile').dataset.g, 1); else return meldung('Eine Runde braucht mindestens zwei Zeilen.', false); }
+  if (akt === 'rundeWeg') {
+    if (b.dataset.sicher !== '1') { b.dataset.sicher = '1'; b.textContent = 'Wirklich löschen?'; b.style.fontSize = '14px'; b.style.color = '#C62828';
+      setTimeout(() => { if (b.isConnected) { b.dataset.sicher = ''; b.textContent = '🗑'; b.style.fontSize = ''; b.style.color = ''; } }, 3000); return; }
+    D.runden.splice(ri, 1);
+  }
+  zeichneRunden();
+  if (akt === 'gruppeNeu') { const z = document.querySelectorAll(`.runde[data-r="${ri}"] .zeile`); const f = z[z.length - 1].querySelector('input'); if (f) f.focus(); }
+});
+function neueRunde() {
+  const vorher = D.runden[D.runden.length - 1];
+  D.runden.push(leereRunde(vorher ? vorher.groesse : 2));
+  zeichneRunden();
+  const alle = document.querySelectorAll('.runde'); alle[alle.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+$('neueRunde').onclick = neueRunde;
+
+/* Bild verkleinern und einsetzen */
+function bildFehler(ziel, text) {
+  const m = document.querySelector(`.runde[data-r="${ziel.r}"] .meld`);
+  if (m) m.innerHTML = `<div class="hinweis fehl">${text}</div>`;
+  meldung(text, false);
+}
+$('bilddatei').addEventListener('change', () => {
+  const f = $('bilddatei').files && $('bilddatei').files[0];
+  const ziel = bildZiel; bildZiel = null;
+  if (!f || !ziel) { $('bilddatei').value = ''; return; }
+  const heic = /heic|heif/i.test(f.type + f.name);
+  const rd = new FileReader();
+  rd.onerror = () => bildFehler(ziel, 'Das Bild konnte nicht gelesen werden. Bitte ein anderes Bild versuchen.');
+  rd.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+        const s = Math.min(1, 360 / w, 240 / h);
+        const cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(w * s)); cv.height = Math.max(1, Math.round(h * s));
+        const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+        cx.drawImage(img, 0, 0, cv.width, cv.height);
+        D.runden[ziel.r].gruppen[ziel.g][ziel.k] = { bild: cv.toDataURL('image/jpeg', .82) };
+      } catch (e) {
+        D.runden[ziel.r].gruppen[ziel.g][ziel.k] = { bild: String(rd.result) };
+      }
+      zeichneRunden();
+      meldung('', true);
+    };
+    img.onerror = () => bildFehler(ziel, heic
+      ? 'Dieses Bild ist im Format HEIC (iPhone/iPad-Foto) und kann hier nicht geöffnet werden. Bitte als JPG oder PNG speichern, z. B. über ein Bildschirmfoto.'
+      : 'Dieses Bild konnte nicht geöffnet werden. Bitte ein JPG- oder PNG-Bild verwenden.');
+    img.src = String(rd.result);
+  };
+  rd.readAsDataURL(f);
+  $('bilddatei').value = '';
+});
+
+/* Enter springt ins nächste Feld */
+$('runden').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  e.preventDefault();
+  const alle = [...document.querySelectorAll('#runden input')];
+  const i = alle.indexOf(e.target);
+  if (alle[i + 1]) alle[i + 1].focus();
+});
+
+/* ---------- Prüfen der Eingaben ---------- */
+function norm(t) { return istBild(t) ? '' : String(t).trim().replace(/\s+/g, ' ').toLowerCase(); }
+function pruefeEingaben(streng) {
+  let ok = true;
+  document.querySelectorAll('.runde').forEach(el => {
+    const r = D.runden[+el.dataset.r];
+    const zaehl = {};
+    r.gruppen.forEach(g => g.forEach(t => { const n = norm(t); if (n) zaehl[n] = (zaehl[n] || 0) + 1; }));
+    let leer = 0, doppelt = [];
+    el.querySelectorAll('.zeile input').forEach(inp => {
+      const n = norm(inp.value);
+      inp.classList.toggle('gefuellt', !!n);
+      inp.classList.toggle('leer', streng && !n);
+      if (!n) leer++;
+      const d = n && zaehl[n] > 1;
+      inp.classList.toggle('doppelt', !!d);
+      if (d && !doppelt.includes(inp.value.trim())) doppelt.push(inp.value.trim());
+    });
+    let h = '';
+    if (streng && leer) { h += `<div class="hinweis fehl">Bitte alle Felder ausfüllen (${leer} leer).</div>`; ok = false; }
+    if (doppelt.length) h += `<div class="hinweis warn">Diese Karte kommt mehrmals vor: <b>${doppelt.map(esc).join(', ')}</b>. Das Spiel kann dann nicht erkennen, zu welcher Zeile sie gehört. Bitte eine Karte ändern.</div>`;
+    if (doppelt.length && streng) ok = false;
+    el.querySelector('.meld').innerHTML = h;
+  });
+  return ok;
+}
+
+/* ---------- Ersteller ---------- */
+function monatJahr() { const d = new Date(); return MONATE[d.getMonth()] + ' ' + d.getFullYear(); }
+$('name').addEventListener('input', () => { D.name = $('name').value; });
+$('titel').addEventListener('input', () => { D.titel = $('titel').value; });
+
+/* ---------- Spiel bauen ---------- */
+function spielHTML() {
+  const daten = {
+    spielart: D.spielart, titel: $('titel').value.trim() || STANDARDTITEL[D.spielart],
+    schule: SCHULE, farbe: D.farbe, name: $('name').value.trim(), ki: 'Claude', monat: monatJahr(),
+    runden: D.runden.map(r => ({ groesse: r.groesse, zeichen: r.zeichen, sprachen: r.sprachen.slice(),
+      gruppen: r.gruppen.map(g => g.map(t => istBild(t) ? { bild: t.bild } : String(t).trim())) }))
+  };
+  const json = JSON.stringify(daten).replace(/</g, '\\u003c');
+  return $(D.spielart === 'memory' ? 'vorlage-memory' : 'vorlage').textContent.replace(/<\\\/script>/g, '</' + 'script>').replace('/*__DATEN__*/', () => json)
+    .replace('<title>Was gehört zusammen?</title>', () => '<title>' + esc(daten.titel) + '</title>');
+}
+function bereit() {
+  if (!pruefeEingaben(true)) { meldung('Bitte die rot oder orange markierten Felder prüfen.', false);
+    const f = document.querySelector('input.leer, input.doppelt'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); return false; }
+  return true;
+}
+function meldung(t, gut) { const m = $('meldung'); m.textContent = t; m.className = gut ? 'gut' : 'schlecht'; }
+function kopierenAnbieten() { $('kopieren').style.display = 'inline-block'; }
+function dateiname() {
+  return ($('titel').value.trim() || 'Zuordnungsspiel').replace(/[äÄ]/g, 'ae').replace(/[öÖ]/g, 'oe').replace(/[üÜ]/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') + '.html';
+}
+
+$('testen').onclick = () => {
+  if (!bereit()) return;
+  $('testframe').srcdoc = spielHTML();
+  $('testfenster').classList.add('zeigen');
+};
+$('testZu').onclick = () => { $('testfenster').classList.remove('zeigen'); $('testframe').srcdoc = ''; };
+
+let claudeDownloads = null;
+try { if (window.claude && claude.use) claude.use('downloads').then(d => { claudeDownloads = d; }).catch(() => {}); } catch (e) {}
+
+$('laden').onclick = async () => {
+  if (!bereit()) return;
+  const html = spielHTML(), name = dateiname();
+  if (claudeDownloads) {
+    try { await claudeDownloads.save({ filename: name, data: html }); meldung('Das Spiel wurde als „' + name + '“ gespeichert.', true); }
+    catch (e) { if (e && e.code === 'declined') meldung('Speichern abgebrochen.', false); else { meldung('Herunterladen geht hier leider nicht.', false); kopierenAnbieten(); } }
+    return;
+  }
+  try {
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    meldung('Das Spiel wird als „' + name + '“ heruntergeladen.', true); kopierenAnbieten();
+  } catch (e) { { meldung('Herunterladen geht hier leider nicht.', false); kopierenAnbieten(); } }
+};
+
+$('kopieren').onclick = async () => {
+  if (!bereit()) return;
+  const h = spielHTML();
+  try { await navigator.clipboard.writeText(h); meldung('Kopiert! Den Text in eine leere Datei einfügen und als .html speichern.', true); }
+  catch (e) {
+    const t = $('kopierfeld'); t.value = h; t.select();
+    try { document.execCommand('copy'); meldung('Kopiert! Den Text in eine leere Datei einfügen und als .html speichern.', true); }
+    catch (e2) { meldung('Kopieren hat nicht geklappt.', false); }
+  }
+};
+
+/* ---------- Gespeichertes Spiel öffnen ---------- */
+$('oeffnen').onclick = () => $('datei').click();
+$('datei').onchange = () => {
+  const f = $('datei').files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    const m = String(rd.result).match(/<script type="application\/json" id="spieldaten">([\s\S]*?)<\/script>/);
+    let d = null; try { d = m && JSON.parse(m[1]); } catch (e) {}
+    if (!d || !d.runden) return meldung('In dieser Datei wurde kein Spiel aus dem Zuordnungs-Generator gefunden.', false);
+    D = { spielart: d.spielart === 'memory' ? 'memory' : 'kleben', titel: d.titel, farbe: FARBEN[d.farbe] ? d.farbe : 'rot', name: d.name || '',
+      runden: d.runden.map(r => { const n = r.groesse === 3 ? 3 : 2;
+        const pass = a => { const x = (a || []).slice(0, n); while (x.length < n) x.push(''); return x; };
+        return { groesse: n, zeichen: ZEICHEN.includes(r.zeichen) ? r.zeichen : '=', sprachen: pass(r.sprachen),
+          gruppen: r.gruppen.slice(0, MAXZEILEN[n]).map(pass) }; }) };
+    formularFuellen();
+    meldung('Spiel „' + d.titel + '“ geladen. Du kannst es jetzt ändern.', true);
+  };
+  rd.readAsText(f); $('datei').value = '';
+};
+
+function formularFuellen() {
+  $('titel').value = D.titel || ''; $('name').value = D.name || '';
+  farbeSetzen(D.farbe || 'rot');
+  spielartSetzen(D.spielart || 'kleben');
+}
+
+/* ---------- Blubberblasen ---------- */
+(function () {
+  const b = $('blasen');
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.animationDuration = (14 + Math.random() * 18) + 's';
+    s.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(s);
+  }
+})();
+
+formularFuellen();
+</script>
+</body>
+</html>
