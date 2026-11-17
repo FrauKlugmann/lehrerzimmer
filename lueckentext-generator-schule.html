@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lückentext-Generator Schule</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; min-height: 100vh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%) fixed; transition: background .4s; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 14px 18px 10px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 40%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 12px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  header h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+  header p { margin: 4px 0 0; opacity: .9; font-size: 15px; }
+
+  section { background: #fff; border: 2px solid var(--rand); border-radius: 18px; padding: 14px 18px 16px; margin: 14px 0; }
+  section > h2 { margin: 0 0 10px; font-size: 20px; color: var(--h1); display: flex; align-items: center; gap: 10px; }
+  section > h2 .nr { width: 30px; height: 30px; border-radius: 50%; background: var(--b2); color: #fff; font-size: 16px;
+    display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  label.f { display: block; font-weight: bold; font-size: 15px; margin: 10px 0 4px; }
+  .klein { font-weight: normal; color: #555; font-size: 13px; }
+  input[type=text], select { font: inherit; font-size: 17px; padding: 8px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; background: #fff; }
+  input[type=text]:focus, select:focus { outline: none; border-color: var(--b2); }
+  input.gefuellt { border-color: #43A047; background: #F4FBF3; }
+  input.leer { border-color: #E53935; background: #FFF5F5; }
+  input.doppelt { border-color: #FB8C00; background: #FFF8EC; }
+  .zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 640px) { .zwei { grid-template-columns: 1fr; } }
+
+  .spielart { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  @media (max-width: 640px) { .spielart { grid-template-columns: 1fr; } }
+  .spielart button { background: #fff; color: #333; border: 3px solid #e0e0e0; box-shadow: none; border-radius: 16px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px; text-align: left; font-size: 16px; }
+  .spielart button .gr { font-size: 34px; }
+  .spielart button small { display: block; font-weight: normal; color: #666; font-size: 13px; margin-top: 2px; }
+  .spielart button.an { border-color: var(--b2); background: var(--hell); color: var(--h1); }
+  body.memory .nurKleben { display: none !important; }
+  .farbwahl { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+  .farbwahl button { width: auto; display: flex; flex-direction: column; align-items: center; gap: 9px; background: none; box-shadow: none;
+    color: #333; padding: 0; font-size: 14px; }
+  .farbwahl .kreis { width: 52px; height: 52px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 0 2px #cfd8dc; transition: transform .15s; }
+  .farbwahl button.an .kreis { box-shadow: 0 0 0 3px #111; transform: scale(1.1); }
+  .farbwahl button.an { font-weight: bold; }
+
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.12);
+    padding: 9px 22px; font-size: 16px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button.hell { background: #fff; color: var(--h1); border: 2px solid var(--b2); box-shadow: none; }
+  button.weg { background: none; color: #999; box-shadow: none; padding: 4px 10px; font-size: 20px; }
+  button.weg:hover { color: #C62828; }
+  button.gross { font-size: 19px; padding: 12px 28px; }
+
+  .runde { border: 2px solid var(--rand); border-radius: 16px; margin: 12px 0; overflow: hidden; }
+  .rkopf { background: var(--hell); padding: 8px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .rkopf b { font-size: 18px; color: var(--h1); margin-right: auto; }
+  .rkopf label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .rkopf select { width: auto; font-size: 15px; padding: 5px 8px; }
+  .rinhalt { padding: 10px 12px 12px; }
+  .aufgabe { font-size: 14px; color: #555; margin-bottom: 8px; }
+  .zeile { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+  .zeile .gnr { width: 26px; text-align: right; color: #888; font-size: 14px; flex: none; }
+  .zelle { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 4px; }
+  .zelle input { flex: 1 1 0; min-width: 0; }
+  .zelle .bildknopf { flex: none; width: 38px; height: 38px; padding: 0; font-size: 18px; border-radius: 10px;
+    background: #fff; border: 2px solid #cfd8dc; box-shadow: none; color: #333; }
+  .zelle .bildknopf:hover { border-color: var(--b2); }
+  .zelle .bild { flex: 1 1 0; min-width: 0; height: 42px; border: 2px solid #43A047; border-radius: 10px; background: #F4FBF3;
+    display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
+  .zelle .bild img { max-height: 100%; max-width: 100%; border-radius: 6px; }
+  .zelle .bild.leer { border-color: #E53935; }
+  .kopfzeile { display: flex; align-items: center; gap: 6px; margin: 2px 0 4px; }
+  .kopfzeile .gnr, .kopfzeile .verb, .kopfzeile .platz { visibility: hidden; }
+  .kopfzeile .platz { width: 40px; flex: none; }
+  .kopfzeile label { flex: 1 1 0; min-width: 0; font-size: 13px; color: #555; display: flex; align-items: center; gap: 4px; }
+  .kopfzeile select { font-size: 14px; padding: 4px 6px; flex: 1; min-width: 0; }
+  .voll { font-size: 14px; color: #555; margin-top: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .zeile .verb { flex: none; color: #9e8f4e; font-weight: bold; font-size: 18px; width: 16px; text-align: center; }
+  .hinweis { font-size: 14px; border-radius: 10px; padding: 8px 12px; margin-top: 8px; }
+  .hinweis.warn { background: #FFF3E0; color: #8D4A00; }
+  .hinweis.fehl { background: #FFEBEE; color: #B71C1C; }
+  .hilfebox { background: var(--hell); border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+  .hilfebox code { background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 0 5px; font-size: 14px; }
+
+  .knoepfe { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  #meldung { font-weight: bold; font-size: 15px; margin-top: 10px; min-height: 20px; }
+  #meldung.gut { color: #2E7D32; } #meldung.schlecht { color: #C62828; }
+  footer { text-align: right; font-size: 12px; color: #333; margin-top: 6px; }
+
+  #testfenster { position: fixed; inset: 0; z-index: 50; display: none; background: rgba(255,255,255,.5);
+    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); padding: 14px; flex-direction: column; gap: 8px; }
+  #testfenster.zeigen { display: flex; }
+  #testfenster .oben { display: flex; justify-content: flex-end; }
+  #testfenster iframe { flex: 1; width: 100%; border: none; border-radius: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.35); background: #fff; }
+  #kopierfeld { position: fixed; left: -9999px; }
+
+  .korbspalten { display: grid; gap: 12px; }
+  .kspalte { border: 2px solid var(--rand); border-radius: 14px; padding: 8px; background: #fff; min-width: 0; }
+  .kspalte .kname { font-weight: bold; margin-bottom: 8px; }
+  .vorschau2 { font-size: 14px; margin-top: 6px; line-height: 1.9; }
+  .lchip { display: inline-block; background: #FFF8E1; border: 1.5px solid #FFB300; border-radius: 8px; padding: 0 8px; line-height: 1.6; }
+  textarea.kartenfeld { font: inherit; font-size: 16px; padding: 6px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; resize: vertical; min-height: 56px; background: #fff; }
+  textarea.kartenfeld:focus { outline: none; border-color: var(--b2); }
+  textarea.gefuellt { border-color: #43A047; background: #F4FBF3; }
+  textarea.leer { border-color: #E53935; background: #FFF5F5; }
+  textarea.doppelt { border-color: #FB8C00; background: #FFF8EC; }
+  .kspalte .kzeile { display: flex; align-items: center; gap: 4px; margin: 5px 0; }
+  .kspalte .kzeile .zelle { flex: 1; }
+  .kspalte .kkopf { font-size: 13px; color: #555; margin: 0 0 4px; }
+  .rkopf select { width: auto; }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <h1>Lückentext-Generator der Emil-Petri-Schule Arnstadt</h1>
+    <p>Text schreiben und Lückenwörter markieren. Daraus entsteht ein fertiger Lückentext für die Schüler.</p>
+  </header>
+
+  <section>
+    <h2><span class="nr">1</span>Aussehen</h2>
+    <label class="f" for="titel">Titel des Spiels</label>
+    <input type="text" id="titel" value="Lückentext" style="max-width:480px">
+    <label class="f">Farbe</label>
+    <div class="farbwahl" id="farbwahl"></div>
+  </section>
+
+  <section>
+    <h2><span class="nr">2</span>Runden und Texte</h2>
+    <div class="hilfebox">
+      Schreibe den Text und setze jedes Lückenwort in <b>eckige Klammern</b>: <code>Der Graph ist eine [Gerade].</code><br>
+      Sind mehrere Antworten richtig, trenne sie mit einem senkrechten Strich: <code>[0,5|1/2]</code>. Im Wortspeicher erscheint dann die erste.<br>
+      <b>Wörter ziehen:</b> Die Schüler ziehen die Wörter aus einem Wortspeicher in die Lücken. Zusätzliche falsche Wörter (Ablenker) machen es schwerer.<br>
+      <b>Wörter eintippen:</b> Die Schüler schreiben die Wörter selbst. Groß- und Kleinschreibung muss stimmen.<br>
+      Tipps: <code>3/4</code> wird als Bruch angezeigt, <code>*</code> wird zum Malpunkt. Den senkrechten Strich | gibt es am PC mit <b>AltGr + &lt;</b>, auf dem iPad unter <b>.?123</b> → <b>#+=</b>.
+    </div>
+    <div id="runden"></div>
+    <button class="hell" id="neueRunde">＋ Weitere Runde</button>
+  </section>
+
+  <section>
+    <h2><span class="nr">3</span>Erstellt von</h2>
+    <label class="f" for="name">Dein Name</label>
+    <input type="text" id="name" placeholder="z. B. Max Mustermann" style="max-width:480px">
+  </section>
+
+  <section>
+    <h2><span class="nr">4</span>Spiel erstellen</h2>
+    <div class="knoepfe">
+      <button class="gross" id="testen">▶ Spiel testen</button>
+      <button class="gross" id="laden">⬇ Spiel herunterladen</button>
+      <button class="hell" id="oeffnen">📂 Gespeichertes Spiel bearbeiten</button>
+      <input type="file" id="datei" accept=".html,.htm" style="display:none">
+      <input type="file" id="bilddatei" accept="image/*" style="display:none">
+    </div>
+    <div id="meldung"></div>
+    <button class="hell" id="kopieren" style="display:none; margin-top:8px">📋 Stattdessen HTML kopieren</button>
+    <div class="hilfebox" style="margin-top:10px">
+      „Spiel herunterladen“ speichert das fertige Spiel sofort als HTML-Datei, auf dem iPad in der App „Dateien“, am PC im Ordner „Downloads“.
+      Die Datei kann man per Doppelklick im Browser öffnen, verschicken oder bei GitHub Pages hochladen. Um ein Spiel später zu ändern, öffne die Datei hier mit „Gespeichertes Spiel bearbeiten“.
+    </div>
+  </section>
+
+  <footer>Erstellt von Marion Klugmann (November 2026) mit freundlicher Unterstützung von Claude.</footer>
+</div>
+
+<div id="testfenster">
+  <div class="oben"><button id="testZu">✕ Test schließen</button></div>
+  <iframe id="testframe" title="Spiel testen"></iframe>
+</div>
+<textarea id="kopierfeld"></textarea>
+
+<script type="text/plain" id="vorlage-luecke"><!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lückentext</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; overflow: hidden;
+    height: 100vh; height: 100dvh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%); position: relative; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; height: 100%; max-width: 1400px; margin: 0 auto; padding: 12px 14px 8px;
+    display: flex; flex-direction: column; gap: 8px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 55%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 8px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  .titel { flex: 1 1 260px; position: relative; }
+  .titel .schule { font-size: 12px; opacity: .85; letter-spacing: .5px; position: absolute; left: 0; bottom: 100%; margin-bottom: 1px; white-space: nowrap; }
+  .titel h1 { margin: 0; font-size: clamp(18px, 2.3vw, 26px); }
+  header.mitschule { padding-top: 20px; padding-bottom: 12px; }
+  .chips { display: flex; gap: 6px; align-items: center; }
+  .chip { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.45); font-size: 16px; }
+  .chip.aktiv { background: #fff; color: var(--h1); border-color: #fff; transform: scale(1.12); }
+  .chip.fertig { background: #FFD54F; color: #5D4037; border-color: #FFD54F; }
+  .uhr { background: rgba(0,0,0,.22); border-radius: 999px; padding: 6px 14px; font-size: 20px; font-weight: bold;
+    font-variant-numeric: tabular-nums; min-width: 104px; text-align: center; }
+
+  .leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .info { font-size: 17px; flex: 1 1 300px; }
+  #feedback { font-size: 16px; font-weight: bold; min-height: 20px; }
+  #feedback.gut { color: #2E7D32; } #feedback.schlecht { color: #C62828; }
+  .stand { display: flex; gap: 8px; font-size: 15px; }
+  .pill { background: #fff; border: 2px solid #ddd; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+  .pill b.rot { color: #C62828; }
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.15);
+    padding: 9px 26px; font-size: 18px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.hilfe { width: 38px; height: 38px; padding: 0; font-size: 20px; flex: none; background: rgba(255,255,255,.18);
+    border: 2px solid rgba(255,255,255,.55); box-shadow: none; }
+
+  #board { flex: 1; min-height: 0; position: relative; border-radius: 18px; overflow: hidden;
+    border: 2px solid var(--rand); box-shadow: inset 0 2px 10px rgba(0,0,0,.06);
+    background-color: #fffdf7;
+    background-image: radial-gradient(#dcdcd4 1.2px, transparent 1.2px); background-size: 24px 24px; }
+
+  footer { text-align: right; font-size: 12px; color: #333; min-height: 2px; }
+
+  #overlay, #intro { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 50;
+    background: rgba(255,255,255,.5); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+  #overlay.zeigen, #intro.zeigen { display: flex; }
+  .modal { background: #fff; border-radius: 22px; padding: 22px 30px 24px; min-width: 300px; max-width: 92vw; text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,.3); border-top: 8px solid var(--b2); animation: rein .45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes rein { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h2 { margin: 0 0 10px; font-size: 28px; color: var(--h1); }
+  .modal .zeile { font-size: 20px; margin: 6px 0; }
+  .modal .gross { font-size: 24px; font-weight: bold; margin: 12px 0 4px; }
+  .modal .stern { color: #F9A825; }
+  .modal button { margin-top: 14px; }
+  .anleitung { width: 620px; max-height: 92vh; overflow: auto; text-align: left; }
+  .anleitung h2 { text-align: center; }
+  .schritt { display: flex; gap: 14px; align-items: flex-start; padding: 10px 12px; margin: 8px 0; border-radius: 14px; background: var(--hell); font-size: 18px; line-height: 1.35; }
+  .schritt .nr { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--b2); color: #fff; font-weight: bold;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .demo { display: flex; justify-content: center; align-items: center; margin: 4px 0 10px; position: relative; }
+  .demo .dk { width: 92px; height: 58px; border: 2px solid #37474F; border-radius: 10px; background: #fff; font-weight: bold; font-size: 20px;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 #cfd8dc; }
+  .demo .dt { position: absolute; width: 34px; height: 30px; transform: rotate(-10deg); background: rgba(245,232,180,.92);
+    display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .farbe { display: inline-block; padding: 0 7px; border-radius: 5px; color: #fff; font-weight: bold; }
+  .anleitung .knopf { text-align: center; }
+  .anleitung button { font-size: 22px; padding: 11px 40px; }
+  #konfetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
+  .frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; font-size: .85em; vertical-align: middle; }
+  .frac > span:first-child { border-bottom: 2px solid #111; padding: 0 3px 1px; }
+  .frac > span:last-child { padding: 1px 3px 0; }
+  #board { display: flex; flex-direction: column; background-image: none; background-color: #fff; }
+  #text { flex: 1 1 auto; overflow: auto; padding: clamp(14px, 2.5vw, 30px) clamp(16px, 3vw, 40px); font-size: clamp(18px, 2.1vw, 25px);
+    line-height: 2.25; white-space: pre-line; }
+  .luecke { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; min-height: 1.7em; padding: 0 .4em;
+    border: 2px dashed var(--b2); border-radius: 10px; background: var(--hell); line-height: 1.3; margin: 0 .1em; cursor: pointer;
+    transition: background .2s, border-color .2s; white-space: nowrap; }
+  .luecke.ziel { background: #FFF8E1; border-color: #FFB300; border-style: solid; }
+  .luecke.voll { border-style: solid; background: #fff; font-weight: bold; }
+  .luecke.ok { border-color: #2E7D32; background: #E8F5E9; color: #1B5E20; font-weight: bold; border-style: solid; cursor: default; }
+  .luecke.bad { border-color: #D32F2F; background: #FFEBEE; color: #B71C1C; border-style: solid; animation: shake .4s; }
+  input.luecke { font: inherit; font-size: .95em; text-align: center; cursor: text; outline: none; color: #111; }
+  input.luecke:focus { border-style: solid; background: #fff; box-shadow: 0 0 0 3px rgba(0,0,0,.08); }
+  #speicher { flex: none; border-top: 3px dashed var(--rand); background: var(--hell); padding: 10px 14px 12px; }
+  #speicher .titel2 { font-size: 13px; font-weight: bold; color: var(--h1); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .08em; }
+  #woerter { display: flex; flex-wrap: wrap; gap: 8px; min-height: 44px; }
+  .wort { font-size: clamp(16px, 1.9vw, 22px); font-weight: bold; padding: 6px 14px; border-radius: 10px; background: #fff; border: 2px solid #37474F;
+    box-shadow: 0 3px 0 #cfd8dc; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none; }
+  .wort.gewaehlt { border-color: #FFB300; background: #FFF8E1; box-shadow: 0 0 0 3px rgba(255,179,0,.35); }
+  .wort.fliegt { position: fixed; z-index: 60; pointer-events: none; cursor: grabbing; filter: drop-shadow(0 10px 12px rgba(0,0,0,.3)); }
+  @keyframes shake { 0%,100% { translate: 0; } 25% { translate: -6px; } 50% { translate: 6px; } 75% { translate: -4px; } }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <div class="titel" id="titelbox">
+      <div class="schule" id="schule"></div>
+      <h1 id="titel">Lückentext</h1>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="uhr" id="uhr">⏱ 00:00</div>
+    <button class="hilfe" id="hilfe" title="Anleitung">?</button>
+  </header>
+  <div class="leiste">
+    <div class="info" id="info"></div>
+    <div id="feedback"></div>
+    <div class="stand" id="stand"></div>
+    <button id="pruefen">✔ Prüfen</button>
+  </div>
+  <div id="board"><div id="text"></div><div id="speicher"><div class="titel2">Wortspeicher</div><div id="woerter"></div></div></div>
+  <footer id="fuss"></footer>
+</div>
+<div id="overlay"><div class="modal" id="modal"></div></div>
+<div id="intro" class="zeigen"><div class="modal anleitung">
+  <h2>So funktioniert der Lückentext</h2>
+  <div class="schritt" id="schrittZiehen"><div class="nr">1</div><div><b>Wörter einsetzen:</b> Ziehe ein Wort aus dem Wortspeicher unten in die passende Lücke. Oder tippe erst das Wort und dann die Lücke an. Vorsicht: Nicht jedes Wort wird gebraucht!</div></div>
+  <div class="schritt" id="schrittTippen"><div class="nr">1</div><div><b>Wörter eintippen:</b> Tippe in die Lücke und schreibe das fehlende Wort hinein. Achte auf Groß- und Kleinschreibung. Mit der Eingabetaste springst du zur nächsten Lücke.</div></div>
+  <div class="schritt"><div class="nr">2</div><div><b>Prüfen:</b> Tippe auf „✔ Prüfen“. <span class="farbe" style="background:#2E7D32">Grüne</span> Lücken sind richtig. <span class="farbe" style="background:#D32F2F">Rote</span> Lücken sind falsch, versuche es dort noch einmal.</div></div>
+  <div class="schritt"><div class="nr">3</div><div><b>Vertan?</b> Vor dem Prüfen kannst du ein eingesetztes Wort antippen, dann springt es zurück.</div></div>
+  <div class="schritt"><div class="nr">4</div><div><b>Ziel:</b> <span id="zielsatz">Fülle alle Lücken richtig.</span> Versuche, ohne Fehler durchzukommen!</div></div>
+  <div class="knopf"><button id="losgehts">Los geht's! ➜</button></div>
+</div></div>
+<canvas id="konfetti"></canvas>
+
+<script type="application/json" id="spieldaten">/*__DATEN__*/<\/script>
+<script>
+const FARBEN = {
+  tuerkis: { r: ['#00585C', '#00897B', '#26C6DA', '#84E3EC'], h: ['#00616A', '#00838F', '#1FB5C6'], b: ['#26B5A6', '#00897B', '#00695C'], hell: '#EAF8F8', rand: '#C5E8EA' },
+  rot:     { r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' }
+};
+function ladeDaten(ersatz) {
+  try { const d = JSON.parse(document.getElementById('spieldaten').textContent); if (d) return d; } catch (e) {}
+  return ersatz;
+}
+function basisEinrichten(D) {
+  const f = FARBEN[D.farbe] || FARBEN.rot, s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c));
+  f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c));
+  s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand);
+  document.title = D.titel || document.title;
+  document.getElementById('titel').textContent = D.titel || document.title;
+  document.getElementById('schule').textContent = D.schule || '';
+  if (D.schule) document.querySelector('header').classList.add('mitschule');
+  if (D.name) document.getElementById('fuss').textContent =
+    'Erstellt von ' + D.name + (D.monat ? ' (' + D.monat + ')' : '') + (D.ki ? ' mit freundlicher Unterstützung von ' + D.ki : '') + '.';
+  const intro = document.getElementById('intro');
+  document.getElementById('losgehts').onclick = () => intro.classList.remove('zeigen');
+  document.getElementById('hilfe').onclick = () => intro.classList.add('zeigen');
+  const b = document.getElementById('blasen');
+  for (let i = 0; i < 26; i++) {
+    const sp = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    sp.style.width = sp.style.height = d + 'px';
+    sp.style.left = (Math.random() * 100) + '%';
+    sp.style.animationDuration = (14 + Math.random() * 18) + 's';
+    sp.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(sp);
+  }
+}
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function fmt(t) {
+  let h = esc(String(t).trim());
+  h = h.replace(/(\d+(?:,\d+)?)\s*\/\s*(\d+(?:,\d+)?)/g, '<span class="frac"><span>$1</span><span>$2</span></span>');
+  h = h.replace(/\s*\*\s*/g, '&nbsp;·&nbsp;');
+  h = h.replace(/(\d) (%|‰)/g, '$1&#8239;$2');
+  return h;
+}
+function laenge(t) { if (t && typeof t === 'object') return 0; return String(t).replace(/\d+\s*\/\s*\d+/g, 'xx').replace(/\s+/g, ' ').trim().length; }
+const istBild = t => t && typeof t === 'object' && t.bild;
+function karteHTML(t) { return istBild(t) ? `<img src="${t.bild}" alt="">` : fmt(t); }
+function sprechText(t) { return istBild(t) ? '' : String(t).replace(/\*/g, ' mal ').trim(); }
+const mmss = ms => { const s = Math.floor(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+
+function vorlesen(text, sprache, el) {
+  if (!text || !sprache || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = sprache; u.rate = .9;
+    const st = speechSynthesis.getVoices().filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(sprache.slice(0, 2).toLowerCase()));
+    const genau = st.find(v => v.lang.replace('_', '-').toLowerCase() === sprache.toLowerCase());
+    if (genau || st[0]) u.voice = genau || st[0];
+    if (el) { el.classList.add('redet'); u.onend = u.onerror = () => el.classList.remove('redet'); setTimeout(() => el.classList.remove('redet'), 4000); }
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); } catch (e) {} }
+
+function konfetti() {
+  const cv = document.getElementById('konfetti'), cx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const farben = ['#FFD54F', '#4FC3F7', '#81C784', '#F06292', '#BA68C8', '#FF8A65'];
+  const teile = Array.from({ length: 140 }, () => ({
+    x: innerWidth / 2 + (Math.random() - .5) * 200, y: innerHeight * .4,
+    vx: (Math.random() - .5) * 16, vy: -Math.random() * 14 - 4, r: Math.random() * 6 + 4,
+    f: farben[Math.floor(Math.random() * farben.length)], a: Math.random() * 6, va: (Math.random() - .5) * .3 }));
+  let n = 0;
+  (function schritt() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    teile.forEach(t => {
+      t.vy += .35; t.x += t.vx; t.y += t.vy; t.vx *= .99; t.a += t.va;
+      cx.save(); cx.translate(t.x, t.y); cx.rotate(t.a); cx.fillStyle = t.f;
+      cx.fillRect(-t.r, -t.r / 2, t.r * 2, t.r); cx.restore();
+    });
+    if (++n < 160) requestAnimationFrame(schritt); else cx.clearRect(0, 0, cv.width, cv.height);
+  })();
+}
+function zeigeModal(html, knoepfe) {
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('overlay').classList.add('zeigen');
+  konfetti();
+  Object.entries(knoepfe || {}).forEach(([id, fn]) => { const b = document.getElementById(id); if (b) b.onclick = fn; });
+}
+
+const D = ladeDaten({ titel: 'Lückentext', schule: '', farbe: 'blau', name: '', runden: [
+  { modus: 'ziehen', anweisung: '', text: 'Der Graph einer [proportionalen] Zuordnung ist eine [Gerade] durch den [Ursprung].\nDer Quotient y : x ist immer [gleich|konstant].', ablenker: ['Kurve', 'Parabel'] }] });
+basisEinrichten(D);
+const RUNDEN = D.runden;
+const hatZiehen = RUNDEN.some(r => r.modus !== 'tippen'), hatTippen = RUNDEN.some(r => r.modus === 'tippen');
+document.getElementById('schrittZiehen').style.display = hatZiehen ? 'flex' : 'none';
+document.getElementById('schrittTippen').style.display = hatTippen ? 'flex' : 'none';
+if (hatZiehen && hatTippen) document.querySelector('#schrittTippen .nr').textContent = '1b';
+if (!hatZiehen) document.querySelectorAll('.anleitung .schritt')[3].querySelector('div:last-child').innerHTML = '<b>Vertan?</b> Rote Lücken kannst du einfach verbessern und noch einmal prüfen.';
+if (RUNDEN.length > 1) document.getElementById('zielsatz').textContent = `Fülle alle Lücken richtig, in ${RUNDEN.length} Runden.`;
+
+const textEl = document.getElementById('text'), woerterEl = document.getElementById('woerter'), speicherEl = document.getElementById('speicher');
+const fb = document.getElementById('feedback'), btnPruefen = document.getElementById('pruefen');
+let runde = 0, luecken = [], woerter = [], fehler = 0, punkte = [], t0 = null, tEnde = null, gewaehlt = null, busy = false;
+const norm = t => String(t).trim().replace(/\s+/g, ' ');
+
+setInterval(() => { document.getElementById('uhr').textContent = '⏱ ' + mmss(t0 ? (tEnde || Date.now()) - t0 : 0); }, 250);
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function start() { if (!t0) t0 = Date.now(); }
+
+/* Text zerlegen: [Wort] oder [Wort|Alternative] wird zur Lücke */
+function zerlege(text) {
+  const teile = [], re = /\[([^\]]+)\]/g; let m, last = 0;
+  while ((m = re.exec(text))) {
+    if (m.index > last) teile.push({ text: text.slice(last, m.index) });
+    teile.push({ luecke: m[1].split('|').map(norm).filter(Boolean) });
+    last = re.lastIndex;
+  }
+  if (last < text.length) teile.push({ text: text.slice(last) });
+  return teile;
+}
+
+function starteRunde(r) {
+  runde = r; fehler = 0; gewaehlt = null; busy = false;
+  document.getElementById('overlay').classList.remove('zeigen');
+  fb.textContent = ''; fb.className = ''; btnPruefen.disabled = false;
+  const R = RUNDEN[r], tippen = R.modus === 'tippen';
+  const teile = zerlege(R.text || '');
+  luecken = []; woerter = [];
+  teile.forEach(t => { if (t.luecke) luecken.push({ antworten: t.luecke, wort: null, st: '' }); });
+  if (!tippen) {
+    luecken.forEach((l, i) => woerter.push({ id: i, text: l.antworten[0], in: null }));
+    (R.ablenker || []).map(norm).filter(Boolean).forEach(a => woerter.push({ id: woerter.length, text: a, in: null }));
+    shuffle(woerter);
+  }
+  const maxLen = Math.max(4, ...luecken.map(l => Math.max(...l.antworten.map(a => a.length))), ...woerter.map(w => w.text.length));
+  let li = 0;
+  textEl.innerHTML = teile.map(t => {
+    if (!t.luecke) { const vorn = /^\s/.test(t.text) ? ' ' : '', hinten = /\s$/.test(t.text) && !/\n\s*$/.test(t.text) ? ' ' : '';
+      const nl = /^\s*\n/.test(t.text) ? '\n' : '', nl2 = /\n\s*$/.test(t.text) ? '\n' : '';
+      return (nl || vorn) + fmt(t.text).replace(/&nbsp;·&nbsp;/g, ' · ') + (nl2 || hinten); }
+    const i = li++;
+    return tippen
+      ? `<input class="luecke" data-l="${i}" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:${maxLen + 2}ch">`
+      : `<span class="luecke" data-l="${i}" style="min-width:${maxLen + 1.5}ch"></span>`;
+  }).join('');
+  speicherEl.style.display = tippen ? 'none' : 'block';
+  document.getElementById('info').innerHTML = `<b>Runde ${r + 1}:</b> ${esc(R.anweisung || (tippen ? 'Schreibe die fehlenden Wörter in die Lücken.' : 'Setze die Wörter aus dem Wortspeicher in die Lücken ein.'))}`;
+  document.getElementById('chips').innerHTML = RUNDEN.map((_, i) =>
+    `<div class="chip ${i < r ? 'fertig' : ''} ${i === r ? 'aktiv' : ''}">${i < r ? '✓' : i + 1}</div>`).join('');
+  zeigeStand(); zeichneWoerter();
+  if (tippen) {
+    textEl.querySelectorAll('input.luecke').forEach(inp => {
+      inp.addEventListener('input', () => { start(); const l = luecken[+inp.dataset.l]; if (l.st === 'bad') { l.st = ''; inp.classList.remove('bad'); } });
+      inp.addEventListener('keydown', e => {
+        if (e.key !== 'Enter') return; e.preventDefault();
+        const alle = [...textEl.querySelectorAll('input.luecke:not([readonly])')], i = alle.indexOf(inp);
+        if (alle[i + 1]) alle[i + 1].focus(); else pruefen();
+      });
+    });
+  } else {
+    textEl.querySelectorAll('.luecke').forEach(el => el.addEventListener('click', () => lueckeAntippen(+el.dataset.l)));
+  }
+}
+function zeigeStand() {
+  const ok = luecken.filter(l => l.st === 'ok').length;
+  let h = `<span class="pill">Richtig: <b>${ok}/${luecken.length}</b></span><span class="pill">Fehler: <b class="rot">${fehler}</b></span>`;
+  if (runde > 0) {
+    const p = punkte.slice(0, runde).reduce((a, b) => a + b, 0);
+    let m = 0; for (let i = 0; i < runde; i++) m += zerlege(RUNDEN[i].text || '').filter(t => t.luecke).length;
+    h = `<span class="pill">bisher: <b>${p}/${m}</b></span>` + h;
+  }
+  document.getElementById('stand').innerHTML = h;
+}
+
+/* ---------- Ziehen-Modus ---------- */
+function zeichneWoerter() {
+  woerterEl.innerHTML = '';
+  woerter.filter(w => w.in === null).forEach(w => {
+    const el = document.createElement('div');
+    el.className = 'wort' + (gewaehlt === w.id ? ' gewaehlt' : ''); el.dataset.w = w.id; el.innerHTML = fmt(w.text);
+    el.addEventListener('pointerdown', wortDown);
+    woerterEl.appendChild(el);
+  });
+  textEl.querySelectorAll('span.luecke').forEach(el => {
+    const l = luecken[+el.dataset.l], w = woerter.find(x => x.id === l.wort);
+    el.innerHTML = w ? fmt(w.text) : '';
+    el.className = 'luecke' + (w ? ' voll' : '') + (l.st ? ' ' + l.st : '');
+  });
+}
+function setze(wid, li) {
+  const l = luecken[li]; if (!l || l.st === 'ok') return;
+  if (l.wort !== null) woerter.find(x => x.id === l.wort).in = null;
+  const w = woerter.find(x => x.id === wid);
+  if (w.in !== null) luecken[w.in].wort = null;
+  w.in = li; l.wort = wid; l.st = '';
+  gewaehlt = null; fb.textContent = ''; fb.className = '';
+  zeichneWoerter();
+}
+function lueckeAntippen(li) {
+  if (busy) return;
+  const l = luecken[li]; if (l.st === 'ok') return;
+  if (gewaehlt !== null) { start(); return setze(gewaehlt, li); }
+  if (l.wort !== null) { woerter.find(x => x.id === l.wort).in = null; l.wort = null; l.st = ''; zeichneWoerter(); }
+}
+let zug = null;
+function wortDown(e) {
+  if (busy) return;
+  start();
+  const el = e.currentTarget, r = el.getBoundingClientRect();
+  zug = { wid: +el.dataset.w, el, sx: e.clientX, sy: e.clientY, dx: e.clientX - r.left, dy: e.clientY - r.top, klon: null };
+  try { el.setPointerCapture(e.pointerId); } catch (x) {}
+  el.addEventListener('pointermove', wortMove); el.addEventListener('pointerup', wortUp); el.addEventListener('pointercancel', wortUp);
+  e.preventDefault();
+}
+function lueckeUnter(x, y) {
+  let t = null;
+  textEl.querySelectorAll('span.luecke').forEach(el => { const r = el.getBoundingClientRect(); if (x >= r.left - 6 && x <= r.right + 6 && y >= r.top - 8 && y <= r.bottom + 8) t = el; });
+  return t;
+}
+function wortMove(e) {
+  if (!zug) return;
+  if (!zug.klon && Math.hypot(e.clientX - zug.sx, e.clientY - zug.sy) > 6) {
+    zug.klon = zug.el.cloneNode(true); zug.klon.classList.add('fliegt'); document.body.appendChild(zug.klon); zug.el.style.opacity = .35;
+  }
+  if (!zug.klon) return;
+  zug.klon.style.left = (e.clientX - zug.dx) + 'px'; zug.klon.style.top = (e.clientY - zug.dy) + 'px';
+  const t = lueckeUnter(e.clientX, e.clientY);
+  textEl.querySelectorAll('span.luecke').forEach(x => x.classList.toggle('ziel', x === t));
+}
+function wortUp(e) {
+  if (!zug) return;
+  const { wid, el, klon } = zug; zug = null;
+  el.removeEventListener('pointermove', wortMove); el.removeEventListener('pointerup', wortUp); el.removeEventListener('pointercancel', wortUp);
+  textEl.querySelectorAll('span.luecke').forEach(x => x.classList.remove('ziel'));
+  if (!klon) { gewaehlt = gewaehlt === wid ? null : wid; zeichneWoerter(); return; }
+  klon.remove(); el.style.opacity = '';
+  const t = lueckeUnter(e.clientX, e.clientY);
+  if (t) setze(wid, +t.dataset.l);
+}
+
+/* ---------- Prüfen ---------- */
+btnPruefen.addEventListener('click', pruefen);
+function pruefen() {
+  if (busy) return;
+  const tippen = RUNDEN[runde].modus === 'tippen';
+  let ok = 0, bad = 0, gesehen = 0;
+  luecken.forEach((l, i) => {
+    if (l.st === 'ok') return;
+    let wert;
+    if (tippen) { const inp = textEl.querySelector(`input.luecke[data-l="${i}"]`); wert = norm(inp.value); if (!wert) return; }
+    else { if (l.wort === null) return; wert = norm(woerter.find(x => x.id === l.wort).text); }
+    gesehen++;
+    if (l.antworten.includes(wert)) { l.st = 'ok'; ok++; } else { l.st = 'bad'; bad++; }
+  });
+  if (!gesehen) { fb.className = 'schlecht'; fb.textContent = tippen ? 'Schreibe zuerst etwas in die Lücken.' : 'Setze zuerst Wörter in die Lücken.'; return; }
+  fehler += bad;
+  fb.className = bad ? 'schlecht' : 'gut';
+  fb.textContent = bad ? `${ok} richtig, ${bad} falsch.` : `Super! ${ok} richtig.`;
+  if (tippen) {
+    luecken.forEach((l, i) => {
+      const inp = textEl.querySelector(`input.luecke[data-l="${i}"]`);
+      inp.classList.toggle('ok', l.st === 'ok'); inp.classList.toggle('bad', l.st === 'bad');
+      if (l.st === 'ok') { inp.readOnly = true; inp.tabIndex = -1; }
+    });
+    zeigeStand();
+    const erste = textEl.querySelector('input.luecke.bad'); if (erste) erste.focus();
+    return fertig();
+  }
+  zeichneWoerter(); zeigeStand();
+  if (bad) {
+    busy = true; btnPruefen.disabled = true;
+    setTimeout(() => {
+      luecken.forEach(l => { if (l.st === 'bad') { woerter.find(x => x.id === l.wort).in = null; l.wort = null; l.st = ''; } });
+      zeichneWoerter(); busy = false; btnPruefen.disabled = false;
+    }, 1300);
+  }
+  fertig();
+}
+
+function fertig() {
+  if (!luecken.every(l => l.st === 'ok')) return;
+  btnPruefen.disabled = true;
+  const max = luecken.length, p = Math.max(0, max - fehler);
+  punkte[runde] = p;
+  fb.className = 'gut'; fb.textContent = 'Alle Lücken richtig!';
+  const stern = p === max ? ' <span class="stern">★ fehlerfrei</span>' : '';
+  if (runde < RUNDEN.length - 1) {
+    setTimeout(() => zeigeModal(`<h2>Runde ${runde + 1} geschafft!</h2><div class="gross">${p}/${max} richtig${stern}</div>
+      <button id="weiter">Nächste Runde ➜</button>`, { weiter: () => starteRunde(runde + 1) }), 600);
+  } else {
+    tEnde = Date.now();
+    const ges = punkte.reduce((a, b) => a + b, 0);
+    let gmax = 0; RUNDEN.forEach(R => gmax += zerlege(R.text || '').filter(t => t.luecke).length);
+    setTimeout(() => zeigeModal(`<h2>Geschafft! 🎉</h2>
+      ${RUNDEN.length > 1 ? punkte.map((q, i) => { const m = zerlege(RUNDEN[i].text || '').filter(t => t.luecke).length;
+        return `<div class="zeile">Runde ${i + 1}: <b>${q}/${m}</b> richtig${q === m ? ' <span class="stern">★</span>' : ''}</div>`; }).join('') : ''}
+      <div class="gross">Gesamt: ${ges}/${gmax} richtig${ges === gmax ? ' <span class="stern">★</span>' : ''}</div>
+      <div class="gross">⏱ Zeit: ${mmss(tEnde - t0)}</div>
+      <button id="nochmal">Nochmal spielen</button>`,
+      { nochmal: () => { punkte = []; t0 = null; tEnde = null; starteRunde(0); } }), 600);
+  }
+}
+starteRunde(0);
+<\/script>
+</body>
+</html>
+</script>
+<script>
+const FARBEN = {
+  rot:     { name: 'Rot',    r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { name: 'Grün',   r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { name: 'Blau',   r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { name: 'Pink',   r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' },
+};
+const SPRACHEN = [['', 'nicht vorlesen'], ['de-DE', 'Deutsch'], ['en-GB', 'Englisch'], ['fr-FR', 'Französisch']];
+const MAXL = 20, MAXA = 8;
+const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const SCHULE = 'Emil-Petri-Schule Arnstadt';
+const $ = id => document.getElementById(id);
+const leereRunde = () => ({ modus: 'ziehen', anweisung: '', text: '', ablenker: '' });
+let D = { titel: 'Lückentext', farbe: 'rot', name: '', runden: [leereRunde()] };
+const norm2 = t => String(t).trim().replace(/\s+/g, ' ');
+function analyse(text) {
+  const luecken = [], re = /\[([^\]]*)\]/g; let m, leer = 0;
+  while ((m = re.exec(text))) { const a = m[1].split('|').map(norm2).filter(Boolean); if (a.length) luecken.push(a); else leer++; }
+  const rest = text.replace(/\[[^\]]*\]/g, '');
+  return { luecken, leer, kaputt: /[\[\]]/.test(rest) };
+}
+const ablenkerListe = r => String(r.ablenker || '').split('\n').map(norm2).filter(Boolean);
+
+function farbeSetzen(k) {
+  D.farbe = k;
+  const f = FARBEN[k], s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c));
+  f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c));
+  s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand);
+  document.querySelectorAll('#farbwahl button').forEach(b => b.classList.toggle('an', b.dataset.k === k));
+}
+$('farbwahl').innerHTML = Object.entries(FARBEN).map(([k, f]) =>
+  `<button type="button" data-k="${k}"><span class="kreis" style="background:linear-gradient(135deg,${f.r[1]},${f.r[2]})"></span>${f.name}</button>`).join('');
+$('farbwahl').addEventListener('click', e => { const b = e.target.closest('button'); if (b) farbeSetzen(b.dataset.k); });
+
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+const istBild = t => t && typeof t === 'object' && t.bild;
+
+function vorschauHTML(r) {
+  const an = analyse(r.text);
+  if (!r.text.trim()) return '<span class="klein">Noch kein Text.</span>';
+  if (!an.luecken.length) return '<span class="klein">Noch keine Lücke erkannt. Setze Wörter in [eckige Klammern].</span>';
+  return `<b>${an.luecken.length} Lücke${an.luecken.length === 1 ? '' : 'n'} erkannt:</b> ` +
+    an.luecken.map(a => `<span class="lchip">${esc(a.join(' oder '))}</span>`).join(' ');
+}
+function zeichneRunden() {
+  $('runden').innerHTML = D.runden.map((r, ri) => {
+    const ziehen = r.modus !== 'tippen';
+    return `
+    <div class="runde" data-r="${ri}">
+      <div class="rkopf">
+        <b>Runde ${ri + 1}</b>
+        <label>Die Schüler sollen:
+          <select data-feld="modus" data-r="${ri}"><option value="ziehen" ${ziehen ? 'selected' : ''}>Wörter ziehen (Wortspeicher)</option>
+            <option value="tippen" ${!ziehen ? 'selected' : ''}>Wörter eintippen</option></select></label>
+        ${D.runden.length > 1 ? `<button class="weg" data-akt="rundeWeg" data-r="${ri}" title="Runde löschen">🗑</button>` : ''}
+      </div>
+      <div class="rinhalt">
+        <label class="f" style="margin-top:0">Arbeitsauftrag <span class="klein">(steht im Spiel oben, kann leer bleiben)</span></label>
+        <input type="text" class="textfeld" data-feld="anweisung" data-r="${ri}" value="${esc(r.anweisung)}" placeholder="z. B. Ergänze die Merksätze.">
+        <label class="f">Text mit Lücken in [eckigen Klammern]</label>
+        <textarea class="kartenfeld lueckentext" data-feld="text" data-r="${ri}" rows="7" placeholder="z. B. Der Graph einer [proportionalen] Zuordnung ist eine [Gerade] durch den [Ursprung].">${esc(r.text)}</textarea>
+        <div class="vorschau2" data-v="${ri}">${vorschauHTML(r)}</div>
+        ${ziehen ? `<label class="f">Ablenker <span class="klein">(falsche Wörter für den Wortspeicher, ein Wort pro Zeile, höchstens ${MAXA}, kann leer bleiben)</span></label>
+        <textarea class="kartenfeld ablenkerfeld" data-feld="ablenker" data-r="${ri}" rows="3" placeholder="z. B.&#10;Kurve&#10;antiproportionalen">${esc(r.ablenker)}</textarea>` : ''}
+        <div class="meld"></div>
+      </div>
+    </div>`; }).join('');
+  pruefeEingaben(false);
+}
+
+$('runden').addEventListener('input', e => {
+  const x = e.target, r = D.runden[+x.dataset.r]; if (!r || !x.dataset.feld) return;
+  r[x.dataset.feld] = x.value;
+  if (x.dataset.feld === 'text') document.querySelector(`.vorschau2[data-v="${x.dataset.r}"]`).innerHTML = vorschauHTML(r);
+  pruefeEingaben(false);
+});
+$('runden').addEventListener('change', e => {
+  const x = e.target; if (x.tagName !== 'SELECT') return;
+  D.runden[+x.dataset.r].modus = x.value; zeichneRunden();
+});
+$('runden').addEventListener('click', e => {
+  const b = e.target.closest('button[data-akt]'); if (!b) return;
+  const ri = +b.dataset.r;
+  if (b.dataset.akt === 'rundeWeg') {
+    if (b.dataset.sicher !== '1') { b.dataset.sicher = '1'; b.textContent = 'Wirklich löschen?'; b.style.fontSize = '14px'; b.style.color = '#C62828';
+      setTimeout(() => { if (b.isConnected) { b.dataset.sicher = ''; b.textContent = '🗑'; b.style.fontSize = ''; b.style.color = ''; } }, 3000); return; }
+    D.runden.splice(ri, 1); zeichneRunden();
+  }
+});
+$('neueRunde').onclick = () => {
+  D.runden.push(leereRunde()); zeichneRunden();
+  const alle = document.querySelectorAll('.runde'); alle[alle.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+function bildFehler(ziel, text) {
+  const m = document.querySelector(`.runde[data-r="${ziel.r}"] .meld`);
+  if (m) m.innerHTML = `<div class="hinweis fehl">${text}</div>`;
+  meldung(text, false);
+}
+$('bilddatei').addEventListener('change', () => {
+  const f = $('bilddatei').files && $('bilddatei').files[0];
+  const ziel = bildZiel; bildZiel = null;
+  if (!f || !ziel) { $('bilddatei').value = ''; return; }
+  const heic = /heic|heif/i.test(f.type + f.name);
+  const rd = new FileReader();
+  rd.onerror = () => bildFehler(ziel, 'Das Bild konnte nicht gelesen werden. Bitte ein anderes Bild versuchen.');
+  rd.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      let url;
+      try {
+        const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, s = Math.min(1, 360 / w, 240 / h);
+        const cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(w * s)); cv.height = Math.max(1, Math.round(h * s));
+        const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+        cx.drawImage(img, 0, 0, cv.width, cv.height);
+        url = cv.toDataURL('image/jpeg', .82);
+      } catch (e) { url = String(rd.result); }
+      D.runden[ziel.r].karten[ziel.c] = { bild: url };
+      zeichneRunden(); meldung('', true);
+    };
+    img.onerror = () => bildFehler(ziel, heic
+      ? 'Dieses Bild ist im Format HEIC (iPhone/iPad-Foto) und kann hier nicht geöffnet werden. Bitte als JPG oder PNG speichern, z. B. über ein Bildschirmfoto.'
+      : 'Dieses Bild konnte nicht geöffnet werden. Bitte ein JPG- oder PNG-Bild verwenden.');
+    img.src = String(rd.result);
+  };
+  rd.readAsDataURL(f);
+  $('bilddatei').value = '';
+});
+
+/* Enter springt ins nächste Feld */
+$('runden').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  e.preventDefault();
+  const alle = [...document.querySelectorAll('#runden input')], i = alle.indexOf(e.target);
+  if (alle[i + 1]) alle[i + 1].focus();
+});
+
+function norm(t) { return istBild(t) ? '' : String(t).trim().replace(/\s+/g, ' ').toLowerCase(); }
+function pruefeEingaben(streng) {
+  let ok = true;
+  document.querySelectorAll('.runde').forEach(el => {
+    const r = D.runden[+el.dataset.r], an = analyse(r.text), abl = ablenkerListe(r);
+    const tf = el.querySelector('.lueckentext'), af = el.querySelector('.ablenkerfeld');
+    el.querySelectorAll('input.textfeld').forEach(inp => inp.classList.toggle('gefuellt', !!inp.value.trim()));
+    let h = '', fehlt = !an.luecken.length;
+    tf.classList.toggle('gefuellt', !fehlt && !an.kaputt && !an.leer);
+    tf.classList.toggle('leer', streng && (fehlt || an.leer > 0));
+    if (af) af.classList.toggle('gefuellt', abl.length > 0);
+    if (streng && fehlt) { h += `<div class="hinweis fehl">Der Text braucht mindestens eine Lücke in [eckigen Klammern].</div>`; ok = false; }
+    if (an.leer) { h += `<div class="hinweis ${streng ? 'fehl' : 'warn'}">Es gibt leere Klammern [ ]. Bitte ein Wort hineinschreiben oder die Klammern löschen.</div>`; if (streng) ok = false; }
+    if (an.kaputt) h += `<div class="hinweis warn">Eine eckige Klammer ist nicht geschlossen oder steht allein. Bitte prüfen.</div>`;
+    if (an.luecken.length > MAXL) { h += `<div class="hinweis ${streng ? 'fehl' : 'warn'}">${an.luecken.length} Lücken – höchstens ${MAXL} pro Runde, damit alles auf das iPad passt. Bitte den Text auf zwei Runden verteilen.</div>`; if (streng) ok = false; }
+    if (af && abl.length > MAXA) { h += `<div class="hinweis ${streng ? 'fehl' : 'warn'}">Höchstens ${MAXA} Ablenker.</div>`; if (streng) ok = false; }
+    if (r.modus !== 'tippen') {
+      const richtig = an.luecken.flat();
+      const gleich = abl.filter(a => richtig.includes(a));
+      if (gleich.length) h += `<div class="hinweis warn">Dieser Ablenker ist auch eine richtige Antwort: <b>${gleich.map(esc).join(', ')}</b>. Er würde dann als richtig gelten.</div>`;
+    }
+    el.querySelector('.meld').innerHTML = h;
+  });
+  return ok;
+}
+
+function monatJahr() { const d = new Date(); return MONATE[d.getMonth()] + ' ' + d.getFullYear(); }
+$('name').addEventListener('input', () => { D.name = $('name').value; });
+$('titel').addEventListener('input', () => { D.titel = $('titel').value; });
+
+function spielHTML() {
+  const daten = {
+    spielart: 'luecke', titel: $('titel').value.trim() || 'Lückentext',
+    schule: SCHULE, farbe: D.farbe, name: $('name').value.trim(), ki: 'Claude', monat: monatJahr(),
+    runden: D.runden.map(r => ({ modus: r.modus === 'tippen' ? 'tippen' : 'ziehen', anweisung: r.anweisung.trim(), text: r.text.replace(/\s+$/, ''),
+      ablenker: r.modus === 'tippen' ? [] : ablenkerListe(r).slice(0, MAXA) }))
+  };
+  const json = JSON.stringify(daten).replace(/</g, '\\u003c');
+  return $('vorlage-luecke').textContent.replace(/<\\\/script>/g, '</' + 'script>').replace('/*__DATEN__*/', () => json)
+    .replace('<title>Lückentext</title>', () => '<title>' + esc(daten.titel) + '</title>');
+}
+function bereit() {
+  if (!pruefeEingaben(true)) { meldung('Bitte die rot oder orange markierten Felder prüfen.', false);
+    const f = document.querySelector('.leer, .doppelt'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); return false; }
+  return true;
+}
+function meldung(t, gut) { const m = $('meldung'); m.textContent = t; m.className = gut ? 'gut' : 'schlecht'; }
+function kopierenAnbieten() { $('kopieren').style.display = 'inline-block'; }
+function dateiname() {
+  return ($('titel').value.trim() || 'Lueckentext').replace(/[äÄ]/g, 'ae').replace(/[öÖ]/g, 'oe').replace(/[üÜ]/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') + '.html';
+}
+$('testen').onclick = () => {
+  if (!bereit()) return;
+  $('testframe').srcdoc = spielHTML();
+  $('testfenster').classList.add('zeigen');
+};
+$('testZu').onclick = () => { $('testfenster').classList.remove('zeigen'); $('testframe').srcdoc = ''; };
+
+let claudeDownloads = null;
+try { if (window.claude && claude.use) claude.use('downloads').then(d => { claudeDownloads = d; }).catch(() => {}); } catch (e) {}
+
+$('laden').onclick = async () => {
+  if (!bereit()) return;
+  const html = spielHTML(), name = dateiname();
+  if (claudeDownloads) {
+    try { await claudeDownloads.save({ filename: name, data: html }); meldung('Das Spiel wurde als „' + name + '“ gespeichert.', true); }
+    catch (e) { if (e && e.code === 'declined') meldung('Speichern abgebrochen.', false); else { meldung('Herunterladen geht hier leider nicht.', false); kopierenAnbieten(); } }
+    return;
+  }
+  try {
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    meldung('Das Spiel wird als „' + name + '“ heruntergeladen.', true); kopierenAnbieten();
+  } catch (e) { { meldung('Herunterladen geht hier leider nicht.', false); kopierenAnbieten(); } }
+};
+
+$('kopieren').onclick = async () => {
+  if (!bereit()) return;
+  const h = spielHTML();
+  try { await navigator.clipboard.writeText(h); meldung('Kopiert! Den Text in eine leere Datei einfügen und als .html speichern.', true); }
+  catch (e) {
+    const t = $('kopierfeld'); t.value = h; t.select();
+    try { document.execCommand('copy'); meldung('Kopiert! Den Text in eine leere Datei einfügen und als .html speichern.', true); }
+    catch (e2) { meldung('Kopieren hat nicht geklappt.', false); }
+  }
+};
+
+/* ---------- Gespeichertes Spiel öffnen ---------- */
+$('oeffnen').onclick = () => $('datei').click();
+$('datei').onchange = () => {
+  const f = $('datei').files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    const m = String(rd.result).match(/<script type="application\/json" id="spieldaten">([\s\S]*?)<\/script>/);
+    let d = null; try { d = m && JSON.parse(m[1]); } catch (e) {}
+    if (!d || d.spielart !== 'luecke' || !d.runden) return meldung('In dieser Datei wurde kein Spiel aus dem Lückentext-Generator gefunden.', false);
+    D = { titel: d.titel, farbe: FARBEN[d.farbe] ? d.farbe : 'rot', name: d.name || '',
+      runden: d.runden.map(r => ({ modus: r.modus === 'tippen' ? 'tippen' : 'ziehen', anweisung: r.anweisung || '', text: r.text || '', ablenker: (r.ablenker || []).join('\n') })) };
+    formularFuellen();
+    meldung('Spiel „' + d.titel + '“ geladen. Du kannst es jetzt ändern.', true);
+  };
+  rd.readAsText(f); $('datei').value = '';
+};
+function formularFuellen() {
+  $('titel').value = D.titel || ''; $('name').value = D.name || '';
+  farbeSetzen(D.farbe || 'rot'); zeichneRunden();
+}
+/* ---------- Blubberblasen ---------- */
+(function () {
+  const b = $('blasen');
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.animationDuration = (14 + Math.random() * 18) + 's';
+    s.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(s);
+  }
+})();
+
+formularFuellen();
+</script>
+</body>
+</html>

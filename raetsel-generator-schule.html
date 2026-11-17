@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rätsel-Generator Schule</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; min-height: 100vh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%) fixed; transition: background .4s; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 14px 18px 10px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 40%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 12px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  header h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+  header p { margin: 4px 0 0; opacity: .9; font-size: 15px; }
+
+  section { background: #fff; border: 2px solid var(--rand); border-radius: 18px; padding: 14px 18px 16px; margin: 14px 0; }
+  section > h2 { margin: 0 0 10px; font-size: 20px; color: var(--h1); display: flex; align-items: center; gap: 10px; }
+  section > h2 .nr { width: 30px; height: 30px; border-radius: 50%; background: var(--b2); color: #fff; font-size: 16px;
+    display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  label.f { display: block; font-weight: bold; font-size: 15px; margin: 10px 0 4px; }
+  .klein { font-weight: normal; color: #555; font-size: 13px; }
+  input[type=text], select { font: inherit; font-size: 17px; padding: 8px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; background: #fff; }
+  input[type=text]:focus, select:focus { outline: none; border-color: var(--b2); }
+  input.gefuellt { border-color: #43A047; background: #F4FBF3; }
+  input.leer { border-color: #E53935; background: #FFF5F5; }
+  input.doppelt { border-color: #FB8C00; background: #FFF8EC; }
+  .zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 640px) { .zwei { grid-template-columns: 1fr; } }
+
+  .spielart { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  @media (max-width: 640px) { .spielart { grid-template-columns: 1fr; } }
+  .spielart button { background: #fff; color: #333; border: 3px solid #e0e0e0; box-shadow: none; border-radius: 16px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px; text-align: left; font-size: 16px; }
+  .spielart button .gr { font-size: 34px; }
+  .spielart button small { display: block; font-weight: normal; color: #666; font-size: 13px; margin-top: 2px; }
+  .spielart button.an { border-color: var(--b2); background: var(--hell); color: var(--h1); }
+  body.memory .nurKleben { display: none !important; }
+  .farbwahl { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+  .farbwahl button { width: auto; display: flex; flex-direction: column; align-items: center; gap: 9px; background: none; box-shadow: none;
+    color: #333; padding: 0; font-size: 14px; }
+  .farbwahl .kreis { width: 52px; height: 52px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 0 2px #cfd8dc; transition: transform .15s; }
+  .farbwahl button.an .kreis { box-shadow: 0 0 0 3px #111; transform: scale(1.1); }
+  .farbwahl button.an { font-weight: bold; }
+
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.12);
+    padding: 9px 22px; font-size: 16px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button.hell { background: #fff; color: var(--h1); border: 2px solid var(--b2); box-shadow: none; }
+  button.weg { background: none; color: #999; box-shadow: none; padding: 4px 10px; font-size: 20px; }
+  button.weg:hover { color: #C62828; }
+  button.gross { font-size: 19px; padding: 12px 28px; }
+
+  .runde { border: 2px solid var(--rand); border-radius: 16px; margin: 12px 0; overflow: hidden; }
+  .rkopf { background: var(--hell); padding: 8px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .rkopf b { font-size: 18px; color: var(--h1); margin-right: auto; }
+  .rkopf label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .rkopf select { width: auto; font-size: 15px; padding: 5px 8px; }
+  .rinhalt { padding: 10px 12px 12px; }
+  .aufgabe { font-size: 14px; color: #555; margin-bottom: 8px; }
+  .zeile { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+  .zeile .gnr { width: 26px; text-align: right; color: #888; font-size: 14px; flex: none; }
+  .zelle { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 4px; }
+  .zelle input { flex: 1 1 0; min-width: 0; }
+  .zelle .bildknopf { flex: none; width: 38px; height: 38px; padding: 0; font-size: 18px; border-radius: 10px;
+    background: #fff; border: 2px solid #cfd8dc; box-shadow: none; color: #333; }
+  .zelle .bildknopf:hover { border-color: var(--b2); }
+  .zelle .bild { flex: 1 1 0; min-width: 0; height: 42px; border: 2px solid #43A047; border-radius: 10px; background: #F4FBF3;
+    display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
+  .zelle .bild img { max-height: 100%; max-width: 100%; border-radius: 6px; }
+  .zelle .bild.leer { border-color: #E53935; }
+  .kopfzeile { display: flex; align-items: center; gap: 6px; margin: 2px 0 4px; }
+  .kopfzeile .gnr, .kopfzeile .verb, .kopfzeile .platz { visibility: hidden; }
+  .kopfzeile .platz { width: 40px; flex: none; }
+  .kopfzeile label { flex: 1 1 0; min-width: 0; font-size: 13px; color: #555; display: flex; align-items: center; gap: 4px; }
+  .kopfzeile select { font-size: 14px; padding: 4px 6px; flex: 1; min-width: 0; }
+  .voll { font-size: 14px; color: #555; margin-top: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .zeile .verb { flex: none; color: #9e8f4e; font-weight: bold; font-size: 18px; width: 16px; text-align: center; }
+  .hinweis { font-size: 14px; border-radius: 10px; padding: 8px 12px; margin-top: 8px; }
+  .hinweis.warn { background: #FFF3E0; color: #8D4A00; }
+  .hinweis.fehl { background: #FFEBEE; color: #B71C1C; }
+  .hilfebox { background: var(--hell); border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+  .hilfebox code { background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 0 5px; font-size: 14px; }
+
+  .knoepfe { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  #meldung { font-weight: bold; font-size: 15px; margin-top: 10px; min-height: 20px; }
+  #meldung.gut { color: #2E7D32; } #meldung.schlecht { color: #C62828; }
+  footer { text-align: right; font-size: 12px; color: #333; margin-top: 6px; }
+
+  #testfenster { position: fixed; inset: 0; z-index: 50; display: none; background: rgba(255,255,255,.5);
+    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); padding: 14px; flex-direction: column; gap: 8px; }
+  #testfenster.zeigen { display: flex; }
+  #testfenster .oben { display: flex; justify-content: flex-end; }
+  #testfenster iframe { flex: 1; width: 100%; border: none; border-radius: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.35); background: #fff; }
+  #kopierfeld { position: fixed; left: -9999px; }
+
+  .korbspalten { display: grid; gap: 12px; }
+  .kspalte { border: 2px solid var(--rand); border-radius: 14px; padding: 8px; background: #fff; min-width: 0; }
+  .kspalte .kname { font-weight: bold; margin-bottom: 8px; }
+  .spielart { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  .spielart button { background: #fff; color: #333; border: 3px solid #e0e0e0; box-shadow: none; border-radius: 16px; padding: 12px 14px; text-align: left; font-size: 16px; }
+  .spielart button small { display: block; font-weight: normal; color: #666; font-size: 13px; margin-top: 2px; }
+  .spielart button.an { border-color: var(--b2); background: var(--hell); color: var(--h1); }
+  .einst { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  .einst label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .einst select { width: auto; font-size: 15px; padding: 5px 8px; }
+  .vorschauBox { border: 2px dashed var(--rand); border-radius: 14px; padding: 10px 12px; margin: 12px 0; background: #fff; }
+  .vkopf { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .vkopf b { color: var(--h1); }
+  #vorschau { overflow-x: auto; }
+  table.mini { border-collapse: collapse; margin: 0 auto; }
+  table.mini td { width: 22px; height: 22px; text-align: center; font: bold 13px Arial; color: #333; }
+  table.mini:not(.kreuz) td { border: 1px solid #e0e0e0; }
+  table.mini.kreuz td.b { border: 1px solid #37474F; background: #fff; }
+  textarea.kartenfeld { font: inherit; font-size: 16px; padding: 6px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; resize: vertical; min-height: 56px; background: #fff; }
+  textarea.kartenfeld:focus { outline: none; border-color: var(--b2); }
+  textarea.gefuellt { border-color: #43A047; background: #F4FBF3; }
+  textarea.leer { border-color: #E53935; background: #FFF5F5; }
+  textarea.doppelt { border-color: #FB8C00; background: #FFF8EC; }
+  .kspalte .kzeile { display: flex; align-items: center; gap: 4px; margin: 5px 0; }
+  .kspalte .kzeile .zelle { flex: 1; }
+  .kspalte .kkopf { font-size: 13px; color: #555; margin: 0 0 4px; }
+  .rkopf select { width: auto; }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <h1>Rätsel-Generator der Emil-Petri-Schule Arnstadt</h1>
+    <p>Begriffe und Hinweise eintragen. Daraus entsteht ein fertiges Kreuzworträtsel oder Suchsel – zum Spielen am iPad und zum Ausdrucken.</p>
+  </header>
+
+  <section>
+    <h2><span class="nr">1</span>Aussehen</h2>
+    <label class="f">Spielart</label>
+    <div class="spielart" id="spielart">
+      <button type="button" data-a="kreuz"><span>Kreuzworträtsel<small>Begriffe zu den Hinweisen ins Gitter schreiben</small></span></button>
+      <button type="button" data-a="suchsel"><span>Suchsel<small>Wörter im Buchstabengitter finden</small></span></button>
+    </div>
+    <div id="suchselOpt" class="einst" style="margin-top:10px">
+      <label>Schwierigkeit:
+        <select id="stufe"><option value="1">leicht (→ und ↓)</option><option value="2" selected>mittel (dazu schräg)</option><option value="3">schwer (dazu rückwärts)</option></select></label>
+      <label>Die Schüler sehen:
+        <select id="anzeige"><option value="woerter">die gesuchten Wörter</option><option value="hinweise">nur die Hinweise</option></select></label>
+    </div>
+    <label class="f" for="titel">Titel des Spiels</label>
+    <input type="text" id="titel" value="Kreuzworträtsel" style="max-width:480px">
+    <label class="f">Farbe</label>
+    <div class="farbwahl" id="farbwahl"></div>
+  </section>
+
+  <section>
+    <h2><span class="nr">2</span>Begriffe und Hinweise</h2>
+    <div class="hilfebox">
+      Trage in jede Zeile einen <b>Begriff</b> (nur ein Wort, ohne Leerzeichen) und einen <b>Hinweis</b> ein. Das Gitter baut der Generator selbst.<br>
+      Ä, Ö und Ü stehen im Gitter in einem Kästchen, ß wird als SS geschrieben. Gefällt dir die Anordnung nicht, tippe auf „Neu mischen“.<br>
+      4 bis 20 Begriffe. Beim Suchsel mit sichtbaren Wörtern können die Hinweise leer bleiben.
+    </div>
+    <div id="runden"></div>
+    <div class="vorschauBox"><div class="vkopf"><b>Vorschau</b> <button class="hell" id="mischen" type="button">🔀 Neu mischen</button></div><div id="vorschau"></div></div>
+    <button id="neueRunde" style="display:none"></button>
+  </section>
+
+  <section>
+    <h2><span class="nr">3</span>Erstellt von</h2>
+    <label class="f" for="name">Dein Name</label>
+    <input type="text" id="name" placeholder="z. B. Max Mustermann" style="max-width:480px">
+  </section>
+
+  <section>
+    <h2><span class="nr">4</span>Spiel erstellen</h2>
+    <div class="knoepfe">
+      <button class="gross" id="testen">▶ Spiel testen</button>
+      <button class="gross" id="laden">⬇ Spiel herunterladen</button>
+      <button class="hell" id="oeffnen">📂 Gespeichertes Spiel bearbeiten</button>
+      <input type="file" id="datei" accept=".html,.htm" style="display:none">
+      <input type="file" id="bilddatei" accept="image/*" style="display:none">
+    </div>
+    <div id="meldung"></div>
+    <button class="hell" id="kopieren" style="display:none; margin-top:8px">📋 Stattdessen HTML kopieren</button>
+    <div class="hilfebox" style="margin-top:10px">
+      „Spiel herunterladen“ speichert das fertige Spiel sofort als HTML-Datei, auf dem iPad in der App „Dateien“, am PC im Ordner „Downloads“.
+      Die Datei kann man per Doppelklick im Browser öffnen, verschicken oder bei GitHub Pages hochladen. Um ein Spiel später zu ändern, öffne die Datei hier mit „Gespeichertes Spiel bearbeiten“.
+    </div>
+  </section>
+
+  <footer>Erstellt von Marion Klugmann (November 2026) mit freundlicher Unterstützung von Claude.</footer>
+</div>
+
+<div id="testfenster">
+  <div class="oben"><button id="testZu">✕ Test schließen</button></div>
+  <iframe id="testframe" title="Spiel testen"></iframe>
+</div>
+<textarea id="kopierfeld"></textarea>
+
+<script type="text/plain" id="vorlage-raetsel"><!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rätsel</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; overflow: hidden;
+    height: 100vh; height: 100dvh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%); position: relative; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; height: 100%; max-width: 1400px; margin: 0 auto; padding: 12px 14px 8px;
+    display: flex; flex-direction: column; gap: 8px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 55%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 8px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  .titel { flex: 1 1 260px; position: relative; }
+  .titel .schule { font-size: 12px; opacity: .85; letter-spacing: .5px; position: absolute; left: 0; bottom: 100%; margin-bottom: 1px; white-space: nowrap; }
+  .titel h1 { margin: 0; font-size: clamp(18px, 2.3vw, 26px); }
+  header.mitschule { padding-top: 20px; padding-bottom: 12px; }
+  .chips { display: flex; gap: 6px; align-items: center; }
+  .chip { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.45); font-size: 16px; }
+  .chip.aktiv { background: #fff; color: var(--h1); border-color: #fff; transform: scale(1.12); }
+  .chip.fertig { background: #FFD54F; color: #5D4037; border-color: #FFD54F; }
+  .uhr { background: rgba(0,0,0,.22); border-radius: 999px; padding: 6px 14px; font-size: 20px; font-weight: bold;
+    font-variant-numeric: tabular-nums; min-width: 104px; text-align: center; }
+
+  .leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .info { font-size: 17px; flex: 1 1 300px; }
+  #feedback { font-size: 16px; font-weight: bold; min-height: 20px; }
+  #feedback.gut { color: #2E7D32; } #feedback.schlecht { color: #C62828; }
+  .stand { display: flex; gap: 8px; font-size: 15px; }
+  .pill { background: #fff; border: 2px solid #ddd; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+  .pill b.rot { color: #C62828; }
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.15);
+    padding: 9px 26px; font-size: 18px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.hilfe { width: 38px; height: 38px; padding: 0; font-size: 20px; flex: none; background: rgba(255,255,255,.18);
+    border: 2px solid rgba(255,255,255,.55); box-shadow: none; }
+
+  #board { flex: 1; min-height: 0; position: relative; border-radius: 18px; overflow: hidden;
+    border: 2px solid var(--rand); box-shadow: inset 0 2px 10px rgba(0,0,0,.06);
+    background-color: #fffdf7;
+    background-image: radial-gradient(#dcdcd4 1.2px, transparent 1.2px); background-size: 24px 24px; }
+
+  footer { text-align: right; font-size: 12px; color: #333; min-height: 2px; }
+
+  #overlay, #intro { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 50;
+    background: rgba(255,255,255,.5); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+  #overlay.zeigen, #intro.zeigen { display: flex; }
+  .modal { background: #fff; border-radius: 22px; padding: 22px 30px 24px; min-width: 300px; max-width: 92vw; text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,.3); border-top: 8px solid var(--b2); animation: rein .45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes rein { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h2 { margin: 0 0 10px; font-size: 28px; color: var(--h1); }
+  .modal .zeile { font-size: 20px; margin: 6px 0; }
+  .modal .gross { font-size: 24px; font-weight: bold; margin: 12px 0 4px; }
+  .modal .stern { color: #F9A825; }
+  .modal button { margin-top: 14px; }
+  .anleitung { width: 620px; max-height: 92vh; overflow: auto; text-align: left; }
+  .anleitung h2 { text-align: center; }
+  .schritt { display: flex; gap: 14px; align-items: flex-start; padding: 10px 12px; margin: 8px 0; border-radius: 14px; background: var(--hell); font-size: 18px; line-height: 1.35; }
+  .schritt .nr { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--b2); color: #fff; font-weight: bold;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .demo { display: flex; justify-content: center; align-items: center; margin: 4px 0 10px; position: relative; }
+  .demo .dk { width: 92px; height: 58px; border: 2px solid #37474F; border-radius: 10px; background: #fff; font-weight: bold; font-size: 20px;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 #cfd8dc; }
+  .demo .dt { position: absolute; width: 34px; height: 30px; transform: rotate(-10deg); background: rgba(245,232,180,.92);
+    display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .farbe { display: inline-block; padding: 0 7px; border-radius: 5px; color: #fff; font-weight: bold; }
+  .anleitung .knopf { text-align: center; }
+  .anleitung button { font-size: 22px; padding: 11px 40px; }
+  #konfetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
+  #board { display: flex; gap: 14px; padding: 12px; background-image: none; background-color: #fff; }
+  #gitterBox { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; }
+  #liste { flex: 0 0 min(36%, 380px); overflow: auto; font-size: clamp(14px, 1.5vw, 17px); line-height: 1.35; padding-right: 4px; }
+  #liste h3 { font-size: 16px; color: var(--h1); margin: 6px 0 6px; text-transform: uppercase; letter-spacing: .06em; }
+  #liste ol, #liste ul { list-style: none; padding: 0; margin: 0 0 10px; }
+  #liste li { padding: 5px 8px; border-radius: 8px; margin: 2px 0; cursor: pointer; }
+  #liste li b { display: inline-block; min-width: 1.8em; color: var(--h1); }
+  #liste li.aktiv { background: var(--hell); outline: 2px solid var(--b2); }
+  #liste li.geloest { color: #2E7D32; }
+  #liste li.geloest::after { content: " ✔"; }
+  #liste li.gefunden { color: #888; }
+  #liste li.gefunden::before { content: "✔ "; color: #2E7D32; }
+  #liste li .loesung { display: none; font-weight: bold; color: #2E7D32; }
+  #liste li.gefunden .loesung { display: inline; text-decoration: none; }
+  /* Kreuzworträtsel */
+  .kw { display: grid; gap: 0; }
+  .kz { width: var(--z); height: var(--z); position: relative; }
+  .kz.b { background: #fff; border: 1.5px solid #37474F; margin: -0.75px; }
+  .kz.b.wort { background: #FFF8E1; }
+  .kz.b.cur { background: #FFE082; }
+  .kz.b.ok { background: #E8F5E9; }
+  .kz.b.bad { background: #FFCDD2; }
+  .kz .n { position: absolute; left: 2px; top: 0; font-size: calc(var(--z) * .27); font-weight: bold; color: #333; pointer-events: none; line-height: 1.1; }
+  .kz input { width: 100%; height: 100%; border: none; background: transparent; text-align: center; font: bold calc(var(--z) * .58) Arial, sans-serif;
+    text-transform: uppercase; padding: 0; padding-top: calc(var(--z) * .12); caret-color: transparent; outline: none; color: #111; }
+  /* Suchsel */
+  .su { display: grid; user-select: none; -webkit-user-select: none; touch-action: none; border: 2px solid #37474F; border-radius: 10px; overflow: hidden; background: #fff; }
+  .sz { width: var(--z); height: var(--z); display: flex; align-items: center; justify-content: center; font: bold calc(var(--z) * .55) Arial, sans-serif; cursor: pointer; }
+  .sz.wahl { background: #FFE082 !important; }
+  .sz.start { box-shadow: inset 0 0 0 3px #FFB300; }
+  @media (max-width: 760px) { #board { flex-direction: column; } #liste { flex: 0 0 auto; max-height: 34%; } }
+  /* Drucken */
+  #druck { display: none; }
+  @media print {
+    @page { size: A4; margin: 15mm; }
+    body { background: #fff !important; padding: 0; height: auto; overflow: visible; }
+    .blasen, .app, #overlay, #intro, #konfetti { display: none !important; }
+    #druck { display: block; color: #000; font-family: Arial, sans-serif; }
+    #druck h1 { font-size: 20pt; margin: 0 0 2mm; } #druck .schule { font-size: 9pt; color: #444; }
+    #druck .name { margin: 4mm 0 6mm; font-size: 11pt; }
+    #druck .gitter { margin: 0 auto 6mm; }
+    #druck table { border-collapse: collapse; margin: 0 auto; }
+    #druck td { width: 8mm; height: 8mm; text-align: center; vertical-align: middle; font: bold 13pt Arial; padding: 0; position: relative; }
+    #druck td.b { border: 1px solid #000; }
+    #druck td.b sup { position: absolute; left: .6mm; top: .3mm; font-size: 6pt; font-weight: bold; }
+    #druck .s td { width: 7.5mm; height: 7.5mm; }
+    #druck .spalten { columns: 2; column-gap: 8mm; font-size: 10.5pt; line-height: 1.35; }
+    #druck .spalten h3 { font-size: 11pt; margin: 0 0 1mm; }
+    #druck .spalten p { margin: 0 0 1.2mm; break-inside: avoid; }
+    #druck .fuss { text-align: right; font-size: 8pt; margin-top: 6mm; }
+  }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <div class="titel" id="titelbox">
+      <div class="schule" id="schule"></div>
+      <h1 id="titel">Rätsel</h1>
+    </div>
+    <div class="uhr" id="uhr">⏱ 00:00</div>
+    <button class="hilfe" id="drucken" title="Drucken">🖨</button>
+    <button class="hilfe" id="hilfe" title="Anleitung">?</button>
+  </header>
+  <div class="leiste">
+    <div class="info" id="info"></div>
+    <div id="feedback"></div>
+    <div class="stand" id="stand"></div>
+    <button id="pruefen">✔ Prüfen</button>
+  </div>
+  <div id="board"><div id="gitterBox"></div><div id="liste"></div></div>
+  <footer id="fuss"></footer>
+</div>
+<div id="overlay"><div class="modal" id="modal"></div></div>
+<div id="intro" class="zeigen"><div class="modal anleitung" id="anleitung"></div></div>
+<canvas id="konfetti"></canvas>
+<div id="druck"></div>
+
+<script type="application/json" id="spieldaten">/*__DATEN__*/<\/script>
+<script>
+const FARBEN = {
+  tuerkis: { r: ['#00585C', '#00897B', '#26C6DA', '#84E3EC'], h: ['#00616A', '#00838F', '#1FB5C6'], b: ['#26B5A6', '#00897B', '#00695C'], hell: '#EAF8F8', rand: '#C5E8EA' },
+  rot:     { r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' }
+};
+function ladeDaten(ersatz) {
+  try { const d = JSON.parse(document.getElementById('spieldaten').textContent); if (d) return d; } catch (e) {}
+  return ersatz;
+}
+function basisEinrichten(D) {
+  const f = FARBEN[D.farbe] || FARBEN.rot, s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c));
+  f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c));
+  s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand);
+  document.title = D.titel || document.title;
+  document.getElementById('titel').textContent = D.titel || document.title;
+  document.getElementById('schule').textContent = D.schule || '';
+  if (D.schule) document.querySelector('header').classList.add('mitschule');
+  if (D.name) document.getElementById('fuss').textContent =
+    'Erstellt von ' + D.name + (D.monat ? ' (' + D.monat + ')' : '') + (D.ki ? ' mit freundlicher Unterstützung von ' + D.ki : '') + '.';
+  const intro = document.getElementById('intro');
+  document.getElementById('losgehts').onclick = () => intro.classList.remove('zeigen');
+  document.getElementById('hilfe').onclick = () => intro.classList.add('zeigen');
+  const b = document.getElementById('blasen');
+  for (let i = 0; i < 26; i++) {
+    const sp = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    sp.style.width = sp.style.height = d + 'px';
+    sp.style.left = (Math.random() * 100) + '%';
+    sp.style.animationDuration = (14 + Math.random() * 18) + 's';
+    sp.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(sp);
+  }
+}
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function fmt(t) {
+  let h = esc(String(t).trim());
+  h = h.replace(/(\d+(?:,\d+)?)\s*\/\s*(\d+(?:,\d+)?)/g, '<span class="frac"><span>$1</span><span>$2</span></span>');
+  h = h.replace(/\s*\*\s*/g, '&nbsp;·&nbsp;');
+  h = h.replace(/(\d) (%|‰)/g, '$1&#8239;$2');
+  return h;
+}
+function laenge(t) { if (t && typeof t === 'object') return 0; return String(t).replace(/\d+\s*\/\s*\d+/g, 'xx').replace(/\s+/g, ' ').trim().length; }
+const istBild = t => t && typeof t === 'object' && t.bild;
+function karteHTML(t) { return istBild(t) ? `<img src="${t.bild}" alt="">` : fmt(t); }
+function sprechText(t) { return istBild(t) ? '' : String(t).replace(/\*/g, ' mal ').trim(); }
+const mmss = ms => { const s = Math.floor(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+
+function vorlesen(text, sprache, el) {
+  if (!text || !sprache || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = sprache; u.rate = .9;
+    const st = speechSynthesis.getVoices().filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(sprache.slice(0, 2).toLowerCase()));
+    const genau = st.find(v => v.lang.replace('_', '-').toLowerCase() === sprache.toLowerCase());
+    if (genau || st[0]) u.voice = genau || st[0];
+    if (el) { el.classList.add('redet'); u.onend = u.onerror = () => el.classList.remove('redet'); setTimeout(() => el.classList.remove('redet'), 4000); }
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); } catch (e) {} }
+
+function konfetti() {
+  const cv = document.getElementById('konfetti'), cx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const farben = ['#FFD54F', '#4FC3F7', '#81C784', '#F06292', '#BA68C8', '#FF8A65'];
+  const teile = Array.from({ length: 140 }, () => ({
+    x: innerWidth / 2 + (Math.random() - .5) * 200, y: innerHeight * .4,
+    vx: (Math.random() - .5) * 16, vy: -Math.random() * 14 - 4, r: Math.random() * 6 + 4,
+    f: farben[Math.floor(Math.random() * farben.length)], a: Math.random() * 6, va: (Math.random() - .5) * .3 }));
+  let n = 0;
+  (function schritt() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    teile.forEach(t => {
+      t.vy += .35; t.x += t.vx; t.y += t.vy; t.vx *= .99; t.a += t.va;
+      cx.save(); cx.translate(t.x, t.y); cx.rotate(t.a); cx.fillStyle = t.f;
+      cx.fillRect(-t.r, -t.r / 2, t.r * 2, t.r); cx.restore();
+    });
+    if (++n < 160) requestAnimationFrame(schritt); else cx.clearRect(0, 0, cv.width, cv.height);
+  })();
+}
+function zeigeModal(html, knoepfe) {
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('overlay').classList.add('zeigen');
+  konfetti();
+  Object.entries(knoepfe || {}).forEach(([id, fn]) => { const b = document.getElementById(id); if (b) b.onclick = fn; });
+}
+
+/* ---------- Rätsel-Algorithmen (Kreuzworträtsel und Suchsel) ---------- */
+function raetselWort(t) {
+  return String(t || '').normalize('NFC').toUpperCase().replace(/ß/g, 'SS').replace(/ẞ/g, 'SS').replace(/[^A-ZÄÖÜ]/g, '');
+}
+function zufallsGen(seed) {
+  let s = seed >>> 0 || 1;
+  return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+}
+function mische(a, rnd) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* Kreuzworträtsel: liefert { breite, hoehe, woerter: [{i, wort, x, y, dir:'h'|'v', nr}], fehlt: [i] } */
+function baueKreuzwort(eintraege, seed) {
+  const liste = eintraege.map((e, i) => ({ i, wort: raetselWort(e.wort) })).filter(e => e.wort.length >= 2);
+  let bestes = null;
+  for (let versuch = 0; versuch < 80; versuch++) {
+    const rnd = zufallsGen(seed + versuch * 7919);
+    const reihe = versuch === 0 ? liste.slice().sort((a, b) => b.wort.length - a.wort.length)
+      : mische(liste.slice(), rnd).sort((a, b) => (b.wort.length - a.wort.length) * (rnd() < .6 ? 1 : 0));
+    const zellen = new Map(), platz = [], fehlt = [];
+    const key = (x, y) => x + ',' + y;
+    const get = (x, y) => zellen.get(key(x, y));
+    const passt = (w, x, y, d) => {
+      const dx = d === 'h' ? 1 : 0, dy = d === 'h' ? 0 : 1;
+      if (get(x - dx, y - dy) || get(x + dx * w.length, y + dy * w.length)) return -1;
+      let kreuz = 0;
+      for (let k = 0; k < w.length; k++) {
+        const cx = x + dx * k, cy = y + dy * k, c = get(cx, cy);
+        if (c) { if (c.b !== w[k] || c[d]) return -1; kreuz++; }
+        else {
+          if (d === 'h' && (get(cx, cy - 1) || get(cx, cy + 1))) return -1;
+          if (d === 'v' && (get(cx - 1, cy) || get(cx + 1, cy))) return -1;
+        }
+      }
+      return kreuz;
+    };
+    const setze = (e, x, y, d) => {
+      const dx = d === 'h' ? 1 : 0, dy = d === 'h' ? 0 : 1;
+      for (let k = 0; k < e.wort.length; k++) {
+        const kk = key(x + dx * k, y + dy * k), c = zellen.get(kk) || { b: e.wort[k] };
+        c[d] = true; zellen.set(kk, c);
+      }
+      platz.push({ i: e.i, wort: e.wort, x, y, dir: d });
+    };
+    reihe.forEach((e, n) => {
+      if (n === 0) { setze(e, 0, 0, rnd() < .5 || versuch === 0 ? 'h' : 'v'); return; }
+      let best = null;
+      zellen.forEach((c, kk) => {
+        const [cx, cy] = kk.split(',').map(Number);
+        for (let k = 0; k < e.wort.length; k++) {
+          if (e.wort[k] !== c.b) continue;
+          for (const d of ['h', 'v']) {
+            if (c[d]) continue;
+            const x = d === 'h' ? cx - k : cx, y = d === 'h' ? cy : cy - k;
+            const s = passt(e.wort, x, y, d);
+            if (s > 0) {
+              const score = s * 10 + rnd();
+              if (!best || score > best.score) best = { x, y, d, score };
+            }
+          }
+        }
+      });
+      if (best) setze(e, best.x, best.y, best.d); else fehlt.push(e.i);
+    });
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    zellen.forEach((c, kk) => { const [x, y] = kk.split(',').map(Number); minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); });
+    const breite = maxX - minX + 1, hoehe = maxY - minY + 1;
+    const wert = fehlt.length * 1000 + Math.max(breite, hoehe) * 3 + breite * hoehe / 50 + Math.abs(breite - hoehe * 1.4);
+    if (!bestes || wert < bestes.wert) bestes = { wert, breite, hoehe, fehlt: fehlt.concat(eintraege.map((e, i) => i).filter(i => raetselWort(eintraege[i].wort).length < 2)),
+      woerter: platz.map(p => ({ ...p, x: p.x - minX, y: p.y - minY })) };
+    if (!fehlt.length && versuch > 25) break;
+  }
+  /* Nummern vergeben: Startfelder von links oben nach rechts unten */
+  const starts = [...new Set(bestes.woerter.map(w => w.y * 1000 + w.x))].sort((a, b) => a - b);
+  bestes.woerter.forEach(w => { w.nr = starts.indexOf(w.y * 1000 + w.x) + 1; });
+  delete bestes.wert;
+  return bestes;
+}
+
+/* Suchsel: stufe 1 = → ↓, 2 = + diagonal, 3 = + rückwärts. Liefert { groesse, gitter: [string], woerter: [{i, wort, x, y, dx, dy}], fehlt } */
+function baueSuchsel(eintraege, stufe, seed) {
+  const liste = eintraege.map((e, i) => ({ i, wort: raetselWort(e.wort) })).filter(e => e.wort.length >= 2);
+  const laengste = Math.max(4, ...liste.map(e => e.wort.length));
+  const buchstaben = liste.reduce((a, e) => a + e.wort.length, 0);
+  let richt = [[1, 0], [0, 1]];
+  if (stufe >= 2) richt.push([1, 1], [1, -1]);
+  if (stufe >= 3) richt = richt.concat(richt.map(([a, b]) => [-a, -b]));
+  const umlaute = liste.some(e => /[ÄÖÜ]/.test(e.wort));
+  let ergebnis = null;
+  for (let groesse = Math.min(18, Math.max(laengste, Math.ceil(Math.sqrt(buchstaben * 2.2)), 8)); groesse <= 18 && !ergebnis; groesse++) {
+    for (let versuch = 0; versuch < 30 && !ergebnis; versuch++) {
+      const rnd = zufallsGen(seed + groesse * 1009 + versuch * 31);
+      const g = Array.from({ length: groesse }, () => Array(groesse).fill(''));
+      const platz = []; let ok = true;
+      for (const e of liste.slice().sort((a, b) => b.wort.length - a.wort.length)) {
+        let gesetzt = false;
+        for (let t = 0; t < 300 && !gesetzt; t++) {
+          const [dx, dy] = richt[Math.floor(rnd() * richt.length)];
+          const x = Math.floor(rnd() * groesse), y = Math.floor(rnd() * groesse);
+          const ex = x + dx * (e.wort.length - 1), ey = y + dy * (e.wort.length - 1);
+          if (ex < 0 || ey < 0 || ex >= groesse || ey >= groesse) continue;
+          let frei = true;
+          for (let k = 0; k < e.wort.length && frei; k++) { const c = g[y + dy * k][x + dx * k]; if (c && c !== e.wort[k]) frei = false; }
+          if (!frei) continue;
+          for (let k = 0; k < e.wort.length; k++) g[y + dy * k][x + dx * k] = e.wort[k];
+          platz.push({ i: e.i, wort: e.wort, x, y, dx, dy }); gesetzt = true;
+        }
+        if (!gesetzt) { ok = false; break; }
+      }
+      if (!ok) continue;
+      for (let y = 0; y < groesse; y++) for (let x = 0; x < groesse; x++) if (!g[y][x]) g[y][x] = umlaute && rnd() < .05 ? 'ÄÖÜ'[Math.floor(rnd() * 3)] : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(rnd() * 26)];
+      ergebnis = { groesse, gitter: g.map(r => r.join('')), woerter: platz, fehlt: eintraege.map((e, i) => i).filter(i => raetselWort(eintraege[i].wort).length < 2) };
+    }
+  }
+  return ergebnis || { groesse: 0, gitter: [], woerter: [], fehlt: eintraege.map((e, i) => i) };
+}
+
+const D = ladeDaten(null) || (() => {
+  const e = [{ wort: 'Hypotenuse', hinweis: 'längste Seite im rechtwinkligen Dreieck' }, { wort: 'Kathete', hinweis: 'Seite am rechten Winkel' },
+    { wort: 'Winkel', hinweis: 'wird in Grad gemessen' }, { wort: 'Würfel', hinweis: 'Körper mit sechs Quadraten' }, { wort: 'Maßstab', hinweis: 'z. B. 1 : 100 auf einer Karte' },
+    { wort: 'Sinus', hinweis: 'Gegenkathete : Hypotenuse' }];
+  return { titel: 'Rätsel', schule: '', farbe: 'blau', name: '', art: 'kreuz', stufe: 2, anzeige: 'hinweise', eintraege: e, layout: baueKreuzwort(e, 4711) };
+})();
+const E = D.eintraege, L = D.layout, istKreuz = D.art !== 'suchsel';
+const fb = document.getElementById('feedback'), box = document.getElementById('gitterBox'), listeEl = document.getElementById('liste');
+let t0 = null, tEnde = null, fehler = 0, fertigFlag = false;
+setInterval(() => { document.getElementById('uhr').textContent = '⏱ ' + mmss(t0 ? (tEnde || Date.now()) - t0 : 0); }, 250);
+const start = () => { if (!t0) t0 = Date.now(); };
+const woerter = L.woerter;
+
+/* Anleitung */
+document.getElementById('anleitung').innerHTML = istKreuz ? `<h2>So funktioniert das Kreuzworträtsel</h2>
+  <div class="schritt"><div class="nr">1</div><div><b>Hinweis wählen:</b> Tippe rechts auf einen Hinweis oder im Gitter auf ein Kästchen. Das Wort wird gelb markiert.</div></div>
+  <div class="schritt"><div class="nr">2</div><div><b>Schreiben:</b> Tippe die Buchstaben ein. Der Cursor springt von selbst weiter. Tippst du noch einmal auf ein Kästchen, wechselt die Richtung (waagerecht ↔ senkrecht).</div></div>
+  <div class="schritt"><div class="nr">3</div><div><b>Umlaute:</b> Ä, Ö und Ü stehen in einem Kästchen. ß wird als SS geschrieben.</div></div>
+  <div class="schritt"><div class="nr">4</div><div><b>Prüfen:</b> Tippe auf „✔ Prüfen“. Richtige Buchstaben werden <span class="farbe" style="background:#2E7D32">grün</span>, falsche <span class="farbe" style="background:#D32F2F">rot</span>.</div></div>
+  <div class="knopf"><button id="losgehts">Los geht's! ➜</button></div>`
+  : `<h2>So funktioniert das Suchsel</h2>
+  <div class="schritt"><div class="nr">1</div><div><b>Suchen:</b> ${D.anzeige === 'hinweise' ? 'Lies rechts die Hinweise. Finde das passende Wort im Buchstabengitter.' : 'Rechts stehen die Wörter. Finde sie im Buchstabengitter.'}</div></div>
+  <div class="schritt"><div class="nr">2</div><div><b>Markieren:</b> Ziehe mit dem Finger vom ersten bis zum letzten Buchstaben des Wortes. Oder tippe erst den ersten und dann den letzten Buchstaben an.</div></div>
+  <div class="schritt"><div class="nr">3</div><div><b>Richtungen:</b> ${['', 'Die Wörter stehen waagerecht → oder senkrecht ↓.', 'Die Wörter stehen waagerecht, senkrecht oder schräg.', 'Die Wörter stehen in alle Richtungen, auch rückwärts!'][D.stufe || 1]}</div></div>
+  <div class="schritt"><div class="nr">4</div><div><b>Ziel:</b> Finde alle ${woerter.length} Wörter so schnell du kannst.</div></div>
+  <div class="knopf"><button id="losgehts">Los geht's! ➜</button></div>`;
+basisEinrichten(D);
+document.getElementById('info').innerHTML = istKreuz ? '<b>Kreuzworträtsel:</b> Fülle alle Kästchen aus und prüfe dann.' : `<b>Suchsel:</b> Finde alle Wörter im Gitter.`;
+document.getElementById('drucken').onclick = () => { baueDruck(); try { window.print(); } catch (e) {} };
+const esc2 = t => esc(t).replace(/(\d+(?:,\d+)?)\s*\/\s*(\d+(?:,\d+)?)/g, '$1⁄$2');
+
+function zeigeStand(geloest, gesamt) {
+  document.getElementById('stand').innerHTML = `<span class="pill">${istKreuz ? 'Gelöst' : 'Gefunden'}: <b>${geloest}/${gesamt}</b></span>` +
+    (istKreuz ? `<span class="pill">Fehler: <b class="rot">${fehler}</b></span>` : '');
+}
+function abschluss() {
+  if (fertigFlag) return; fertigFlag = true; tEnde = Date.now();
+  document.getElementById('pruefen').disabled = true;
+  fb.className = 'gut'; fb.textContent = istKreuz ? 'Alles richtig ausgefüllt!' : 'Alle Wörter gefunden!';
+  setTimeout(() => zeigeModal(`<h2>Geschafft! 🎉</h2>
+    <div class="gross">${istKreuz ? (fehler ? `${fehler} Fehler beim Prüfen` : '<span class="stern">★ fehlerfrei</span>') : `Alle ${woerter.length} Wörter gefunden`}</div>
+    <div class="gross">⏱ Zeit: ${mmss(tEnde - (t0 || tEnde))}</div><button id="nochmal">Nochmal spielen</button>`, { nochmal: () => location.reload() }), 400);
+}
+
+/* =============== Kreuzworträtsel =============== */
+let zellen = {}, aktivWort = null, richtung = 'h';
+function kreuzStarten() {
+  document.getElementById('pruefen').style.display = '';
+  woerter.forEach(w => { for (let k = 0; k < w.wort.length; k++) { const x = w.x + (w.dir === 'h' ? k : 0), y = w.y + (w.dir === 'v' ? k : 0), kk = x + ',' + y;
+    zellen[kk] = zellen[kk] || { x, y, b: w.wort[k], woerter: [] }; zellen[kk].woerter.push(w); } });
+  woerter.forEach(w => { const z = zellen[w.x + ',' + w.y]; z.nr = w.nr; });
+  const g = document.createElement('div'); g.className = 'kw';
+  g.style.gridTemplateColumns = `repeat(${L.breite}, var(--z))`;
+  for (let y = 0; y < L.hoehe; y++) for (let x = 0; x < L.breite; x++) {
+    const z = zellen[x + ',' + y], d = document.createElement('div');
+    if (z) {
+      d.className = 'kz b'; d.dataset.k = x + ',' + y;
+      d.innerHTML = (z.nr ? `<span class="n">${z.nr}</span>` : '') + `<input maxlength="1" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text">`;
+      z.el = d; z.inp = d.querySelector('input');
+      z.inp.addEventListener('focus', () => waehleZelle(z, false));
+      z.inp.addEventListener('mousedown', () => { if (document.activeElement === z.inp) waehleZelle(z, true); });
+      z.inp.addEventListener('touchend', () => { if (document.activeElement === z.inp) waehleZelle(z, true); });
+      z.inp.addEventListener('input', () => eingabe(z));
+      z.inp.addEventListener('keydown', e => taste(e, z));
+    } else d.className = 'kz';
+    g.appendChild(d);
+  }
+  box.appendChild(g);
+  const h = woerter.filter(w => w.dir === 'h').sort((a, b) => a.nr - b.nr), v = woerter.filter(w => w.dir === 'v').sort((a, b) => a.nr - b.nr);
+  const li = w => `<li data-w="${woerter.indexOf(w)}"><b>${w.nr}</b> ${esc2(E[w.i].hinweis || '')}</li>`;
+  listeEl.innerHTML = `<h3>→ Waagerecht</h3><ol>${h.map(li).join('')}</ol><h3>↓ Senkrecht</h3><ol>${v.map(li).join('')}</ol>`;
+  listeEl.querySelectorAll('li').forEach(el => el.onclick = () => { const w = woerter[+el.dataset.w]; richtung = w.dir; aktivWort = w;
+    const leer = zellenVon(w).find(z => !z.inp.value) || zellenVon(w)[0]; leer.inp.focus(); markiere(); });
+  masseKreuz(); addEventListener('resize', masseKreuz);
+  zeigeStand(0, woerter.length);
+}
+function masseKreuz() {
+  const W = box.clientWidth - 6, H = box.clientHeight - 6;
+  box.style.setProperty('--z', Math.floor(Math.max(18, Math.min(52, W / L.breite, H / L.hoehe))) + 'px');
+}
+const zellenVon = w => Array.from({ length: w.wort.length }, (_, k) => zellen[(w.x + (w.dir === 'h' ? k : 0)) + ',' + (w.y + (w.dir === 'v' ? k : 0))]);
+let aktZelle = null;
+function waehleZelle(z, wechseln) {
+  start();
+  if (wechseln && aktZelle === z && z.woerter.length > 1) richtung = richtung === 'h' ? 'v' : 'h';
+  aktZelle = z;
+  aktivWort = z.woerter.find(w => w.dir === richtung) || z.woerter[0];
+  richtung = aktivWort.dir;
+  markiere();
+}
+function markiere() {
+  Object.values(zellen).forEach(z => z.el.classList.remove('wort', 'cur'));
+  if (aktivWort) zellenVon(aktivWort).forEach(z => z.el.classList.add('wort'));
+  if (aktZelle) aktZelle.el.classList.add('cur');
+  listeEl.querySelectorAll('li').forEach(el => el.classList.toggle('aktiv', woerter[+el.dataset.w] === aktivWort));
+  const a = listeEl.querySelector('li.aktiv'); if (a) a.scrollIntoView({ block: 'nearest' });
+}
+function eingabe(z) {
+  let v = z.inp.value.normalize('NFC').toUpperCase().replace(/ß/g, 'S').replace(/[^A-ZÄÖÜ]/g, '');
+  z.inp.value = v.slice(-1);
+  z.el.classList.remove('ok', 'bad');
+  if (z.inp.value && aktivWort) {
+    const zs = zellenVon(aktivWort), i = zs.indexOf(z);
+    if (i >= 0 && i < zs.length - 1) zs[i + 1].inp.focus();
+  }
+}
+function taste(e, z) {
+  const zs = aktivWort ? zellenVon(aktivWort) : [z], i = zs.indexOf(z);
+  if (e.key === 'Backspace' && !z.inp.value && i > 0) { e.preventDefault(); zs[i - 1].inp.value = ''; zs[i - 1].el.classList.remove('ok', 'bad'); zs[i - 1].inp.focus(); }
+  const pf = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowDown: [0, 1], ArrowUp: [0, -1] }[e.key];
+  if (pf) { e.preventDefault(); const n = zellen[(z.x + pf[0]) + ',' + (z.y + pf[1])]; if (n) { richtung = pf[0] ? 'h' : 'v'; n.inp.focus(); } }
+  if (e.key === 'Enter') { e.preventDefault(); pruefen(); }
+}
+function pruefen() {
+  if (!istKreuz || fertigFlag) return;
+  let leer = 0, bad = 0;
+  Object.values(zellen).forEach(z => {
+    z.el.classList.remove('ok', 'bad');
+    if (!z.inp.value) { leer++; return; }
+    if (z.inp.value === z.b) z.el.classList.add('ok'); else { z.el.classList.add('bad'); bad++; }
+  });
+  fehler += bad;
+  const geloest = woerter.filter(w => zellenVon(w).every(z => z.inp.value === z.b));
+  listeEl.querySelectorAll('li').forEach(el => el.classList.toggle('geloest', geloest.includes(woerter[+el.dataset.w])));
+  zeigeStand(geloest.length, woerter.length);
+  fb.className = bad ? 'schlecht' : 'gut';
+  fb.textContent = bad ? `${bad} Buchstabe${bad === 1 ? '' : 'n'} falsch.` : leer ? `Bisher alles richtig! Noch ${leer} Kästchen frei.` : '';
+  if (!bad && !leer) abschluss();
+}
+document.getElementById('pruefen').onclick = pruefen;
+
+/* =============== Suchsel =============== */
+let szellen = [], gefunden = new Set(), auswahlStart = null;
+const FARBEN_F = ['#B3E5FC', '#C8E6C9', '#FFE0B2', '#F8BBD0', '#D1C4E9', '#FFF59D', '#B2DFDB', '#FFCCBC', '#DCEDC8', '#E1BEE7', '#B2EBF2', '#F0F4C3'];
+function suchselStarten() {
+  document.getElementById('pruefen').style.display = 'none';
+  const n = L.groesse, g = document.createElement('div'); g.className = 'su';
+  g.style.gridTemplateColumns = `repeat(${n}, var(--z))`;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const d = document.createElement('div'); d.className = 'sz'; d.textContent = [...L.gitter[y]][x]; d.dataset.x = x; d.dataset.y = y;
+    g.appendChild(d); szellen.push(d);
+  }
+  box.appendChild(g);
+  const sort = woerter.slice().sort((a, b) => E[a.i].wort.localeCompare(E[b.i].wort, 'de'));
+  listeEl.innerHTML = `<h3>${D.anzeige === 'hinweise' ? 'Hinweise' : 'Wörter'}</h3><ul>${sort.map(w => `<li data-w="${woerter.indexOf(w)}">${
+    D.anzeige === 'hinweise' ? `${esc2(E[w.i].hinweis || '')} <span class="loesung">→ ${esc(w.wort)}</span>` : esc(w.wort)}</li>`).join('')}</ul>`;
+  g.addEventListener('pointerdown', sDown);
+  masseSuch(); addEventListener('resize', masseSuch);
+  zeigeStand(0, woerter.length);
+}
+function masseSuch() {
+  const W = box.clientWidth - 8, H = box.clientHeight - 8;
+  box.style.setProperty('--z', Math.floor(Math.max(18, Math.min(48, W / L.groesse, H / L.groesse))) + 'px');
+}
+const zelleAn = (x, y) => szellen[y * L.groesse + x];
+function linie(a, b) {
+  const dx = Math.sign(b.x - a.x), dy = Math.sign(b.y - a.y), lx = Math.abs(b.x - a.x), ly = Math.abs(b.y - a.y);
+  if (lx && ly && lx !== ly) return null;
+  const n = Math.max(lx, ly) + 1, r = [];
+  for (let k = 0; k < n; k++) r.push({ x: a.x + dx * k, y: a.y + dy * k });
+  return r;
+}
+let ziehen = null;
+const pos = el => ({ x: +el.dataset.x, y: +el.dataset.y });
+function sDown(e) {
+  const el = e.target.closest('.sz'); if (!el || fertigFlag) return;
+  start(); e.preventDefault();
+  ziehen = { a: pos(el), b: pos(el), bewegt: false };
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch (x) {}
+  e.currentTarget.addEventListener('pointermove', sMove); e.currentTarget.addEventListener('pointerup', sUp); e.currentTarget.addEventListener('pointercancel', sUp);
+  zeigeWahl();
+}
+function sMove(e) {
+  if (!ziehen) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const z = el && el.closest && el.closest('.sz'); if (!z) return;
+  const p = pos(z); if (p.x !== ziehen.b.x || p.y !== ziehen.b.y) { ziehen.b = p; ziehen.bewegt = true; zeigeWahl(); }
+}
+function sUp(e) {
+  const g = e.currentTarget;
+  g.removeEventListener('pointermove', sMove); g.removeEventListener('pointerup', sUp); g.removeEventListener('pointercancel', sUp);
+  if (!ziehen) return;
+  const { a, b, bewegt } = ziehen; ziehen = null;
+  if (!bewegt) {
+    if (!auswahlStart) { auswahlStart = a; szellen.forEach(z => z.classList.remove('wahl')); zelleAn(a.x, a.y).classList.add('start'); return; }
+    const s = auswahlStart; auswahlStart = null; zelleAn(s.x, s.y).classList.remove('start');
+    return pruefeAuswahl(s, a);
+  }
+  if (auswahlStart) { zelleAn(auswahlStart.x, auswahlStart.y).classList.remove('start'); auswahlStart = null; }
+  pruefeAuswahl(a, b);
+}
+function zeigeWahl() {
+  szellen.forEach(z => z.classList.remove('wahl'));
+  if (!ziehen) return;
+  const l = linie(ziehen.a, ziehen.b); if (l) l.forEach(p => zelleAn(p.x, p.y).classList.add('wahl'));
+}
+function pruefeAuswahl(a, b) {
+  szellen.forEach(z => z.classList.remove('wahl'));
+  const l = linie(a, b); if (!l || l.length < 2) return;
+  const key = l.map(p => p.x + ',' + p.y).join(';'), rueck = l.slice().reverse().map(p => p.x + ',' + p.y).join(';');
+  const w = woerter.find((w, i) => { if (gefunden.has(i)) return false;
+    const k = Array.from({ length: w.wort.length }, (_, j) => (w.x + w.dx * j) + ',' + (w.y + w.dy * j)).join(';'); return k === key || k === rueck; });
+  if (!w) { fb.className = 'schlecht'; fb.textContent = 'Das ist leider keins der gesuchten Wörter.'; return; }
+  const i = woerter.indexOf(w); gefunden.add(i);
+  const farbe = FARBEN_F[gefunden.size % FARBEN_F.length];
+  l.forEach(p => zelleAn(p.x, p.y).style.background = farbe);
+  listeEl.querySelector(`li[data-w="${i}"]`).classList.add('gefunden');
+  fb.className = 'gut'; fb.textContent = `Gefunden: ${w.wort}`;
+  zeigeStand(gefunden.size, woerter.length);
+  if (gefunden.size === woerter.length) abschluss();
+}
+
+/* =============== Drucken =============== */
+function baueDruck() {
+  const d = document.getElementById('druck');
+  let h = `<div class="schule">${esc(D.schule || '')}</div><h1>${esc(D.titel || '')}</h1>`;
+  if (istKreuz) {
+    h += '<div class="gitter"><table>';
+    for (let y = 0; y < L.hoehe; y++) { h += '<tr>'; for (let x = 0; x < L.breite; x++) { const z = zellen[x + ',' + y]; h += z ? `<td class="b">${z.nr ? `<sup>${z.nr}</sup>` : ''}</td>` : '<td></td>'; } h += '</tr>'; }
+    h += '</table></div><div class="spalten">';
+    const zeile = w => `<p><b>${w.nr}</b> ${esc2(E[w.i].hinweis || '')}</p>`;
+    h += '<h3>Waagerecht</h3>' + woerter.filter(w => w.dir === 'h').sort((a, b) => a.nr - b.nr).map(zeile).join('');
+    h += '<h3>Senkrecht</h3>' + woerter.filter(w => w.dir === 'v').sort((a, b) => a.nr - b.nr).map(zeile).join('') + '</div>';
+  } else {
+    h += '<div class="gitter s"><table>' + L.gitter.map(r => '<tr>' + [...r].map(c => `<td class="b">${c}</td>`).join('') + '</tr>').join('') + '</table></div>';
+    h += `<div class="spalten"><h3>${D.anzeige === 'hinweise' ? 'Hinweise' : 'Wörter'}</h3>` +
+      woerter.slice().sort((a, b) => E[a.i].wort.localeCompare(E[b.i].wort, 'de')).map(w => `<p>☐ ${D.anzeige === 'hinweise' ? esc2(E[w.i].hinweis || '') : esc(w.wort)}</p>`).join('') + '</div>';
+  }
+  const f = document.getElementById('fuss').textContent; if (f) h += `<div class="fuss">${esc(f)}</div>`;
+  d.innerHTML = h;
+}
+
+if (istKreuz) kreuzStarten(); else suchselStarten();
+<\/script>
+</body>
+</html>
+</script>
+<script>
+const FARBEN = {
+  rot:     { name: 'Rot',    r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { name: 'Grün',   r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { name: 'Blau',   r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { name: 'Pink',   r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' },
+};
+const SPRACHEN = [['', 'nicht vorlesen'], ['de-DE', 'Deutsch'], ['en-GB', 'Englisch'], ['fr-FR', 'Französisch']];
+const MAXP = 20, MINP = 4;
+const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const SCHULE = 'Emil-Petri-Schule Arnstadt';
+const $ = id => document.getElementById(id);
+let D = { art: 'kreuz', titel: 'Kreuzworträtsel', farbe: 'rot', name: '', stufe: 2, anzeige: 'woerter', seed: 1000,
+  eintraege: Array.from({ length: 6 }, () => ({ wort: '', hinweis: '' })) };
+const STANDARDTITEL = { kreuz: 'Kreuzworträtsel', suchsel: 'Suchsel' };
+let layout = null;
+function spielartSetzen(a) {
+  const alt = D.art; D.art = a;
+  document.querySelectorAll('#spielart button').forEach(b => b.classList.toggle('an', b.dataset.a === a));
+  $('suchselOpt').style.display = a === 'suchsel' ? 'flex' : 'none';
+  const t = $('titel').value.trim();
+  if (alt !== a && (!t || t === STANDARDTITEL[alt])) { $('titel').value = STANDARDTITEL[a]; D.titel = STANDARDTITEL[a]; }
+  zeichneRunden();
+}
+$('spielart').addEventListener('click', e => { const b = e.target.closest('button'); if (b) spielartSetzen(b.dataset.a); });
+$('stufe').onchange = () => { D.stufe = +$('stufe').value; vorschau(); };
+$('anzeige').onchange = () => { D.anzeige = $('anzeige').value; pruefeEingaben(false); };
+$('mischen').onclick = () => { D.seed = Math.floor(Math.random() * 1e9); vorschau(); };
+/* ---------- Rätsel-Algorithmen (Kreuzworträtsel und Suchsel) ---------- */
+function raetselWort(t) {
+  return String(t || '').normalize('NFC').toUpperCase().replace(/ß/g, 'SS').replace(/ẞ/g, 'SS').replace(/[^A-ZÄÖÜ]/g, '');
+}
+function zufallsGen(seed) {
+  let s = seed >>> 0 || 1;
+  return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+}
+function mische(a, rnd) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* Kreuzworträtsel: liefert { breite, hoehe, woerter: [{i, wort, x, y, dir:'h'|'v', nr}], fehlt: [i] } */
+function baueKreuzwort(eintraege, seed) {
+  const liste = eintraege.map((e, i) => ({ i, wort: raetselWort(e.wort) })).filter(e => e.wort.length >= 2);
+  let bestes = null;
+  for (let versuch = 0; versuch < 80; versuch++) {
+    const rnd = zufallsGen(seed + versuch * 7919);
+    const reihe = versuch === 0 ? liste.slice().sort((a, b) => b.wort.length - a.wort.length)
+      : mische(liste.slice(), rnd).sort((a, b) => (b.wort.length - a.wort.length) * (rnd() < .6 ? 1 : 0));
+    const zellen = new Map(), platz = [], fehlt = [];
+    const key = (x, y) => x + ',' + y;
+    const get = (x, y) => zellen.get(key(x, y));
+    const passt = (w, x, y, d) => {
+      const dx = d === 'h' ? 1 : 0, dy = d === 'h' ? 0 : 1;
+      if (get(x - dx, y - dy) || get(x + dx * w.length, y + dy * w.length)) return -1;
+      let kreuz = 0;
+      for (let k = 0; k < w.length; k++) {
+        const cx = x + dx * k, cy = y + dy * k, c = get(cx, cy);
+        if (c) { if (c.b !== w[k] || c[d]) return -1; kreuz++; }
+        else {
+          if (d === 'h' && (get(cx, cy - 1) || get(cx, cy + 1))) return -1;
+          if (d === 'v' && (get(cx - 1, cy) || get(cx + 1, cy))) return -1;
+        }
+      }
+      return kreuz;
+    };
+    const setze = (e, x, y, d) => {
+      const dx = d === 'h' ? 1 : 0, dy = d === 'h' ? 0 : 1;
+      for (let k = 0; k < e.wort.length; k++) {
+        const kk = key(x + dx * k, y + dy * k), c = zellen.get(kk) || { b: e.wort[k] };
+        c[d] = true; zellen.set(kk, c);
+      }
+      platz.push({ i: e.i, wort: e.wort, x, y, dir: d });
+    };
+    reihe.forEach((e, n) => {
+      if (n === 0) { setze(e, 0, 0, rnd() < .5 || versuch === 0 ? 'h' : 'v'); return; }
+      let best = null;
+      zellen.forEach((c, kk) => {
+        const [cx, cy] = kk.split(',').map(Number);
+        for (let k = 0; k < e.wort.length; k++) {
+          if (e.wort[k] !== c.b) continue;
+          for (const d of ['h', 'v']) {
+            if (c[d]) continue;
+            const x = d === 'h' ? cx - k : cx, y = d === 'h' ? cy : cy - k;
+            const s = passt(e.wort, x, y, d);
+            if (s > 0) {
+              const score = s * 10 + rnd();
+              if (!best || score > best.score) best = { x, y, d, score };
+            }
+          }
+        }
+      });
+      if (best) setze(e, best.x, best.y, best.d); else fehlt.push(e.i);
+    });
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    zellen.forEach((c, kk) => { const [x, y] = kk.split(',').map(Number); minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); });
+    const breite = maxX - minX + 1, hoehe = maxY - minY + 1;
+    const wert = fehlt.length * 1000 + Math.max(breite, hoehe) * 3 + breite * hoehe / 50 + Math.abs(breite - hoehe * 1.4);
+    if (!bestes || wert < bestes.wert) bestes = { wert, breite, hoehe, fehlt: fehlt.concat(eintraege.map((e, i) => i).filter(i => raetselWort(eintraege[i].wort).length < 2)),
+      woerter: platz.map(p => ({ ...p, x: p.x - minX, y: p.y - minY })) };
+    if (!fehlt.length && versuch > 25) break;
+  }
+  /* Nummern vergeben: Startfelder von links oben nach rechts unten */
+  const starts = [...new Set(bestes.woerter.map(w => w.y * 1000 + w.x))].sort((a, b) => a - b);
+  bestes.woerter.forEach(w => { w.nr = starts.indexOf(w.y * 1000 + w.x) + 1; });
+  delete bestes.wert;
+  return bestes;
+}
+
+/* Suchsel: stufe 1 = → ↓, 2 = + diagonal, 3 = + rückwärts. Liefert { groesse, gitter: [string], woerter: [{i, wort, x, y, dx, dy}], fehlt } */
+function baueSuchsel(eintraege, stufe, seed) {
+  const liste = eintraege.map((e, i) => ({ i, wort: raetselWort(e.wort) })).filter(e => e.wort.length >= 2);
+  const laengste = Math.max(4, ...liste.map(e => e.wort.length));
+  const buchstaben = liste.reduce((a, e) => a + e.wort.length, 0);
+  let richt = [[1, 0], [0, 1]];
+  if (stufe >= 2) richt.push([1, 1], [1, -1]);
+  if (stufe >= 3) richt = richt.concat(richt.map(([a, b]) => [-a, -b]));
+  const umlaute = liste.some(e => /[ÄÖÜ]/.test(e.wort));
+  let ergebnis = null;
+  for (let groesse = Math.min(18, Math.max(laengste, Math.ceil(Math.sqrt(buchstaben * 2.2)), 8)); groesse <= 18 && !ergebnis; groesse++) {
+    for (let versuch = 0; versuch < 30 && !ergebnis; versuch++) {
+      const rnd = zufallsGen(seed + groesse * 1009 + versuch * 31);
+      const g = Array.from({ length: groesse }, () => Array(groesse).fill(''));
+      const platz = []; let ok = true;
+      for (const e of liste.slice().sort((a, b) => b.wort.length - a.wort.length)) {
+        let gesetzt = false;
+        for (let t = 0; t < 300 && !gesetzt; t++) {
+          const [dx, dy] = richt[Math.floor(rnd() * richt.length)];
+          const x = Math.floor(rnd() * groesse), y = Math.floor(rnd() * groesse);
+          const ex = x + dx * (e.wort.length - 1), ey = y + dy * (e.wort.length - 1);
+          if (ex < 0 || ey < 0 || ex >= groesse || ey >= groesse) continue;
+          let frei = true;
+          for (let k = 0; k < e.wort.length && frei; k++) { const c = g[y + dy * k][x + dx * k]; if (c && c !== e.wort[k]) frei = false; }
+          if (!frei) continue;
+          for (let k = 0; k < e.wort.length; k++) g[y + dy * k][x + dx * k] = e.wort[k];
+          platz.push({ i: e.i, wort: e.wort, x, y, dx, dy }); gesetzt = true;
+        }
+        if (!gesetzt) { ok = false; break; }
+      }
+      if (!ok) continue;
+      for (let y = 0; y < groesse; y++) for (let x = 0; x < groesse; x++) if (!g[y][x]) g[y][x] = umlaute && rnd() < .05 ? 'ÄÖÜ'[Math.floor(rnd() * 3)] : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(rnd() * 26)];
+      ergebnis = { groesse, gitter: g.map(r => r.join('')), woerter: platz, fehlt: eintraege.map((e, i) => i).filter(i => raetselWort(eintraege[i].wort).length < 2) };
+    }
+  }
+  return ergebnis || { groesse: 0, gitter: [], woerter: [], fehlt: eintraege.map((e, i) => i) };
+}
+
+const gueltig = () => D.eintraege.filter(e => raetselWort(e.wort).length >= 2);
+function vorschau() {
+  const ein = gueltig(), v = $('vorschau');
+  if (ein.length < 2) { layout = null; v.innerHTML = '<span class="klein">Die Vorschau erscheint, sobald mindestens zwei Begriffe eingetragen sind.</span>'; return; }
+  layout = D.art === 'suchsel' ? baueSuchsel(ein, D.stufe, D.seed) : baueKreuzwort(ein, D.seed);
+  let h = '';
+  if (D.art === 'suchsel') {
+    h = `<table class="mini">${layout.gitter.map(r => '<tr>' + [...r].map(c => `<td>${c}</td>`).join('') + '</tr>').join('')}</table>`;
+  } else {
+    const z = {}; layout.woerter.forEach(w => { for (let k = 0; k < w.wort.length; k++) z[(w.x + (w.dir === 'h' ? k : 0)) + ',' + (w.y + (w.dir === 'v' ? k : 0))] = w.wort[k]; });
+    h = '<table class="mini kreuz">'; for (let y = 0; y < layout.hoehe; y++) { h += '<tr>'; for (let x = 0; x < layout.breite; x++) h += z[x + ',' + y] ? `<td class="b">${z[x + ',' + y]}</td>` : '<td></td>'; h += '</tr>'; } h += '</table>';
+  }
+  const fehlt = (layout.fehlt || []).map(i => ein[i] && ein[i].wort).filter(Boolean);
+  if (fehlt.length) h += `<div class="hinweis warn">Diese Begriffe passen nicht ins Gitter: <b>${fehlt.map(esc).join(', ')}</b>. Tippe auf „Neu mischen“ oder ändere einen Begriff.</div>`;
+  v.innerHTML = h;
+}
+
+function farbeSetzen(k) {
+  D.farbe = k;
+  const f = FARBEN[k], s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c));
+  f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c));
+  s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand);
+  document.querySelectorAll('#farbwahl button').forEach(b => b.classList.toggle('an', b.dataset.k === k));
+}
+$('farbwahl').innerHTML = Object.entries(FARBEN).map(([k, f]) =>
+  `<button type="button" data-k="${k}"><span class="kreis" style="background:linear-gradient(135deg,${f.r[1]},${f.r[2]})"></span>${f.name}</button>`).join('');
+$('farbwahl').addEventListener('click', e => { const b = e.target.closest('button'); if (b) farbeSetzen(b.dataset.k); });
+
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+const istBild = t => t && typeof t === 'object' && t.bild;
+
+function zeichneRunden() {
+  const n = D.eintraege.length;
+  $('runden').innerHTML = `<div class="runde" data-r="0"><div class="rinhalt">
+    <div class="kopfzeile" style="margin-top:4px"><span class="gnr" style="visibility:hidden">0.</span>
+      <label style="font-weight:bold;color:#333;flex:0 0 32%">Begriff</label>
+      <label style="font-weight:bold;color:#333">Hinweis</label></div>
+    ${D.eintraege.map((e, ci) => `<div class="zeile">
+        <span class="gnr">${ci + 1}.</span>
+        <input type="text" class="kartenfeld wortfeld" data-c="${ci}" data-feld="wort" value="${esc(e.wort)}" placeholder="z. B. Hypotenuse" style="flex:0 0 32%">
+        <input type="text" class="kartenfeld hinweisfeld" data-c="${ci}" data-feld="hinweis" value="${esc(e.hinweis)}" placeholder="z. B. längste Seite im rechtwinkligen Dreieck">
+        <button class="weg" data-akt="karteWeg" data-c="${ci}" title="Zeile löschen">✕</button>
+      </div>`).join('')}
+    ${n < MAXP ? `<button class="hell" data-akt="karteNeu" style="margin-top:6px">＋ Begriff</button>
+       <span class="klein" style="margin-left:8px">noch ${MAXP - n} möglich</span>`
+      : `<div class="voll">Mehr Begriffe passen nicht (höchstens ${MAXP}).</div>`}
+    <div class="meld"></div></div></div>`;
+  pruefeEingaben(false); vorschau();
+}
+let vTimer = null;
+$('runden').addEventListener('input', e => {
+  const x = e.target; if (!x.dataset.feld) return;
+  D.eintraege[+x.dataset.c][x.dataset.feld] = x.value;
+  pruefeEingaben(false);
+  clearTimeout(vTimer); vTimer = setTimeout(vorschau, 400);
+});
+$('runden').addEventListener('click', e => {
+  const b = e.target.closest('button[data-akt]'); if (!b) return;
+  const c = +b.dataset.c;
+  if (b.dataset.akt === 'karteNeu') { if (D.eintraege.length < MAXP) D.eintraege.push({ wort: '', hinweis: '' }); }
+  if (b.dataset.akt === 'karteWeg') { if (D.eintraege.length > MINP) D.eintraege.splice(c, 1); else return meldung('Es braucht mindestens ' + MINP + ' Begriffe.', false); }
+  zeichneRunden();
+  if (b.dataset.akt === 'karteNeu') { const f = document.querySelectorAll('.wortfeld'); f[f.length - 1].focus(); }
+});
+$('runden').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  e.preventDefault();
+  const alle = [...document.querySelectorAll('#runden input')], i = alle.indexOf(e.target);
+  if (alle[i + 1]) alle[i + 1].focus();
+});
+
+function bildFehler(ziel, text) {
+  const m = document.querySelector(`.runde[data-r="${ziel.r}"] .meld`);
+  if (m) m.innerHTML = `<div class="hinweis fehl">${text}</div>`;
+  meldung(text, false);
+}
+$('bilddatei').addEventListener('change', () => {
+  const f = $('bilddatei').files && $('bilddatei').files[0];
+  const ziel = bildZiel; bildZiel = null;
+  if (!f || !ziel) { $('bilddatei').value = ''; return; }
+  const heic = /heic|heif/i.test(f.type + f.name);
+  const rd = new FileReader();
+  rd.onerror = () => bildFehler(ziel, 'Das Bild konnte nicht gelesen werden. Bitte ein anderes Bild versuchen.');
+  rd.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      let url;
+      try {
+        const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, s = Math.min(1, 360 / w, 240 / h);
+        const cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(w * s)); cv.height = Math.max(1, Math.round(h * s));
+        const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+        cx.drawImage(img, 0, 0, cv.width, cv.height);
+        url = cv.toDataURL('image/jpeg', .82);
+      } catch (e) { url = String(rd.result); }
+      D.runden[ziel.r].paare[ziel.c][ziel.k] = { bild: url };
+      zeichneRunden(); meldung('', true);
+    };
+    img.onerror = () => bildFehler(ziel, heic
+      ? 'Dieses Bild ist im Format HEIC (iPhone/iPad-Foto) und kann hier nicht geöffnet werden. Bitte als JPG oder PNG speichern, z. B. über ein Bildschirmfoto.'
+      : 'Dieses Bild konnte nicht geöffnet werden. Bitte ein JPG- oder PNG-Bild verwenden.');
+    img.src = String(rd.result);
+  };
+  rd.readAsDataURL(f);
+  $('bilddatei').value = '';
+});
+
+/* Enter springt ins nächste Feld */
+$('runden').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  e.preventDefault();
+  const alle = [...document.querySelectorAll('#runden input')], i = alle.indexOf(e.target);
+  if (alle[i + 1]) alle[i + 1].focus();
+});
+
+function norm(t) { return istBild(t) ? '' : String(t).trim().replace(/\s+/g, ' ').toLowerCase(); }
+function pruefeEingaben(streng) {
+  let ok = true, leer = 0, kaputt = [], doppelt = [];
+  const brauchtHinweis = D.art === 'kreuz' || D.anzeige === 'hinweise';
+  const zaehl = {}; D.eintraege.forEach(e => { const w = raetselWort(e.wort); if (w) zaehl[w] = (zaehl[w] || 0) + 1; });
+  document.querySelectorAll('.wortfeld').forEach(inp => {
+    const roh = inp.value.trim(), w = raetselWort(roh);
+    inp.classList.toggle('gefuellt', w.length >= 2);
+    inp.classList.toggle('leer', streng && w.length < 2);
+    if (w.length < 2) leer++;
+    if (roh && /[^A-Za-zÄÖÜäöüß]/.test(roh)) kaputt.push(roh);
+    const d = w && zaehl[w] > 1; inp.classList.toggle('doppelt', !!d); if (d && !doppelt.includes(roh)) doppelt.push(roh);
+  });
+  document.querySelectorAll('.hinweisfeld').forEach(inp => {
+    const v = !!inp.value.trim(); inp.classList.toggle('gefuellt', v); inp.classList.toggle('leer', streng && brauchtHinweis && !v); if (brauchtHinweis && !v) leer++;
+  });
+  let h = '';
+  if (streng && leer) { h += `<div class="hinweis fehl">Bitte alle Felder ausfüllen (${leer} leer).</div>`; ok = false; }
+  if (kaputt.length) h += `<div class="hinweis warn">Leerzeichen, Ziffern und Zeichen werden im Gitter weggelassen: <b>${kaputt.map(esc).join(', ')}</b>.</div>`;
+  if (doppelt.length) { h += `<div class="hinweis ${streng ? 'fehl' : 'warn'}">Dieser Begriff kommt doppelt vor: <b>${doppelt.map(esc).join(', ')}</b>.</div>`; if (streng) ok = false; }
+  if (streng && layout && layout.fehlt && layout.fehlt.length) { h += `<div class="hinweis fehl">Nicht alle Begriffe passen ins Gitter. Bitte „Neu mischen“ oder einen Begriff ändern.</div>`; ok = false; }
+  const m = document.querySelector('.meld'); if (m) m.innerHTML = h;
+  return ok;
+}
+
+function monatJahr() { const d = new Date(); return MONATE[d.getMonth()] + ' ' + d.getFullYear(); }
+$('name').addEventListener('input', () => { D.name = $('name').value; });
+$('titel').addEventListener('input', () => { D.titel = $('titel').value; });
+
+function spielHTML() {
+  const daten = {
+    spielart: 'raetsel', art: D.art, titel: $('titel').value.trim() || STANDARDTITEL[D.art],
+    schule: SCHULE, farbe: D.farbe, name: $('name').value.trim(), ki: 'Claude', monat: monatJahr(),
+    stufe: D.stufe, anzeige: D.art === 'suchsel' ? D.anzeige : 'hinweise', seed: D.seed,
+    eintraege: gueltig().map(e => ({ wort: e.wort.trim(), hinweis: e.hinweis.trim() })), layout
+  };
+  const json = JSON.stringify(daten).replace(/</g, '\\u003c');
+  return $('vorlage-raetsel').textContent.replace(/<\\\/script>/g, '</' + 'script>').replace('/*__DATEN__*/', () => json)
+    .replace('<title>Rätsel</title>', () => '<title>' + esc(daten.titel) + '</title>');
+}
+function bereit() {
+  vorschau();
+  if (!pruefeEingaben(true)) { meldung('Bitte die rot oder orange markierten Felder prüfen.', false);
+    const f = document.querySelector('.leer, .doppelt'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); return false; }
+  return true;
+}
+function meldung(t, gut) { const m = $('meldung'); m.textContent = t; m.className = gut ? 'gut' : 'schlecht'; }
+function kopierenAnbieten() { $('kopieren').style.display = 'inline-block'; }
+function dateiname() {
+  return ($('titel').value.trim() || 'Raetsel').replace(/[äÄ]/g, 'ae').replace(/[öÖ]/g, 'oe').replace(/[üÜ]/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') + '.html';
+}
+$('testen').onclick = () => {
+  if (!bereit()) return;
+  $('testframe').srcdoc = spielHTML();
+  $('testfenster').classList.add('zeigen');
+};
+$('testZu').onclick = () => { $('testfenster').classList.remove('zeigen'); $('testframe').srcdoc = ''; };
+
+let claudeDownloads = null;
+try { if (window.claude && claude.use) claude.use('downloads').then(d => { claudeDownloads = d; }).catch(() => {}); } catch (e) {}
+
+$('laden').onclick = async () => {
+  if (!bereit()) return;
+  const html = spielHTML(), name = dateiname();
+  if (claudeDownloads) {
+    try { await claudeDownloads.save({ filename: name, data: html }); meldung('Das Spiel wurde als „' + name + '“ gespeichert.', true); }
+    catch (e) { if (e && e.code === 'declined') meldung('Speichern abgebrochen.', false); else { meldung('Herunterladen geht hier leider nicht.', false); kopierenAnbieten(); } }
+    return;
+  }
+  try {
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    meldung('Das Spiel wird als „' + name + '“ heruntergeladen.', true); kopierenAnbieten();
+  } catch (e) { { meldung('Herunterladen geht hier leider nicht.', false); kopierenAnbieten(); } }
+};
+
+$('kopieren').onclick = async () => {
+  if (!bereit()) return;
+  const h = spielHTML();
+  try { await navigator.clipboard.writeText(h); meldung('Kopiert! Den Text in eine leere Datei einfügen und als .html speichern.', true); }
+  catch (e) {
+    const t = $('kopierfeld'); t.value = h; t.select();
+    try { document.execCommand('copy'); meldung('Kopiert! Den Text in eine leere Datei einfügen und als .html speichern.', true); }
+    catch (e2) { meldung('Kopieren hat nicht geklappt.', false); }
+  }
+};
+
+/* ---------- Gespeichertes Spiel öffnen ---------- */
+$('oeffnen').onclick = () => $('datei').click();
+$('datei').onchange = () => {
+  const f = $('datei').files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    const m = String(rd.result).match(/<script type="application\/json" id="spieldaten">([\s\S]*?)<\/script>/);
+    let d = null; try { d = m && JSON.parse(m[1]); } catch (e) {}
+    if (!d || d.spielart !== 'raetsel' || !d.eintraege) return meldung('In dieser Datei wurde kein Rätsel aus dem Rätsel-Generator gefunden.', false);
+    D = { art: d.art === 'suchsel' ? 'suchsel' : 'kreuz', titel: d.titel, farbe: FARBEN[d.farbe] ? d.farbe : 'rot', name: d.name || '',
+      stufe: +d.stufe || 2, anzeige: d.anzeige === 'hinweise' ? 'hinweise' : 'woerter', seed: d.seed || 1000, eintraege: d.eintraege.slice(0, MAXP) };
+    formularFuellen();
+    meldung('Spiel „' + d.titel + '“ geladen. Du kannst es jetzt ändern.', true);
+  };
+  rd.readAsText(f); $('datei').value = '';
+};
+function formularFuellen() {
+  $('titel').value = D.titel || ''; $('name').value = D.name || '';
+  $('stufe').value = D.stufe; $('anzeige').value = D.anzeige;
+  farbeSetzen(D.farbe || 'rot'); spielartSetzen(D.art);
+}
+/* ---------- Blubberblasen ---------- */
+(function () {
+  const b = $('blasen');
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.animationDuration = (14 + Math.random() * 18) + 's';
+    s.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(s);
+  }
+})();
+
+formularFuellen();
+</script>
+</body>
+</html>

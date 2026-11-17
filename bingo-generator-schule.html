@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingo-Generator Schule</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; min-height: 100vh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%) fixed; transition: background .4s; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 14px 18px 10px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 40%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 12px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  header h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+  header p { margin: 4px 0 0; opacity: .9; font-size: 15px; }
+
+  section { background: #fff; border: 2px solid var(--rand); border-radius: 18px; padding: 14px 18px 16px; margin: 14px 0; }
+  section > h2 { margin: 0 0 10px; font-size: 20px; color: var(--h1); display: flex; align-items: center; gap: 10px; }
+  section > h2 .nr { width: 30px; height: 30px; border-radius: 50%; background: var(--b2); color: #fff; font-size: 16px;
+    display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  label.f { display: block; font-weight: bold; font-size: 15px; margin: 10px 0 4px; }
+  .klein { font-weight: normal; color: #555; font-size: 13px; }
+  input[type=text], select { font: inherit; font-size: 17px; padding: 8px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; background: #fff; }
+  input[type=text]:focus, select:focus { outline: none; border-color: var(--b2); }
+  input.gefuellt { border-color: #43A047; background: #F4FBF3; }
+  input.leer { border-color: #E53935; background: #FFF5F5; }
+  input.doppelt { border-color: #FB8C00; background: #FFF8EC; }
+  .zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 640px) { .zwei { grid-template-columns: 1fr; } }
+
+  .spielart { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  @media (max-width: 640px) { .spielart { grid-template-columns: 1fr; } }
+  .spielart button { background: #fff; color: #333; border: 3px solid #e0e0e0; box-shadow: none; border-radius: 16px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px; text-align: left; font-size: 16px; }
+  .spielart button .gr { font-size: 34px; }
+  .spielart button small { display: block; font-weight: normal; color: #666; font-size: 13px; margin-top: 2px; }
+  .spielart button.an { border-color: var(--b2); background: var(--hell); color: var(--h1); }
+  body.memory .nurKleben { display: none !important; }
+  .farbwahl { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+  .farbwahl button { width: auto; display: flex; flex-direction: column; align-items: center; gap: 9px; background: none; box-shadow: none;
+    color: #333; padding: 0; font-size: 14px; }
+  .farbwahl .kreis { width: 52px; height: 52px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 0 2px #cfd8dc; transition: transform .15s; }
+  .farbwahl button.an .kreis { box-shadow: 0 0 0 3px #111; transform: scale(1.1); }
+  .farbwahl button.an { font-weight: bold; }
+
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.12);
+    padding: 9px 22px; font-size: 16px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button.hell { background: #fff; color: var(--h1); border: 2px solid var(--b2); box-shadow: none; }
+  button.weg { background: none; color: #999; box-shadow: none; padding: 4px 10px; font-size: 20px; }
+  button.weg:hover { color: #C62828; }
+  button.gross { font-size: 19px; padding: 12px 28px; }
+
+  .runde { border: 2px solid var(--rand); border-radius: 16px; margin: 12px 0; overflow: hidden; }
+  .rkopf { background: var(--hell); padding: 8px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .rkopf b { font-size: 18px; color: var(--h1); margin-right: auto; }
+  .rkopf label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .rkopf select { width: auto; font-size: 15px; padding: 5px 8px; }
+  .rinhalt { padding: 10px 12px 12px; }
+  .aufgabe { font-size: 14px; color: #555; margin-bottom: 8px; }
+  .zeile { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+  .zeile .gnr { width: 26px; text-align: right; color: #888; font-size: 14px; flex: none; }
+  .zelle { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 4px; }
+  .zelle input { flex: 1 1 0; min-width: 0; }
+  .zelle .bildknopf { flex: none; width: 38px; height: 38px; padding: 0; font-size: 18px; border-radius: 10px;
+    background: #fff; border: 2px solid #cfd8dc; box-shadow: none; color: #333; }
+  .zelle .bildknopf:hover { border-color: var(--b2); }
+  .zelle .bild { flex: 1 1 0; min-width: 0; height: 42px; border: 2px solid #43A047; border-radius: 10px; background: #F4FBF3;
+    display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
+  .zelle .bild img { max-height: 100%; max-width: 100%; border-radius: 6px; }
+  .zelle .bild.leer { border-color: #E53935; }
+  .kopfzeile { display: flex; align-items: center; gap: 6px; margin: 2px 0 4px; }
+  .kopfzeile .gnr, .kopfzeile .verb, .kopfzeile .platz { visibility: hidden; }
+  .kopfzeile .platz { width: 40px; flex: none; }
+  .kopfzeile label { flex: 1 1 0; min-width: 0; font-size: 13px; color: #555; display: flex; align-items: center; gap: 4px; }
+  .kopfzeile select { font-size: 14px; padding: 4px 6px; flex: 1; min-width: 0; }
+  .voll { font-size: 14px; color: #555; margin-top: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .zeile .verb { flex: none; color: #9e8f4e; font-weight: bold; font-size: 18px; width: 16px; text-align: center; }
+  .hinweis { font-size: 14px; border-radius: 10px; padding: 8px 12px; margin-top: 8px; }
+  .hinweis.warn { background: #FFF3E0; color: #8D4A00; }
+  .hinweis.fehl { background: #FFEBEE; color: #B71C1C; }
+  .hilfebox { background: var(--hell); border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+  .hilfebox code { background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 0 5px; font-size: 14px; }
+
+  .knoepfe { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  #meldung { font-weight: bold; font-size: 15px; margin-top: 10px; min-height: 20px; }
+  #meldung.gut { color: #2E7D32; } #meldung.schlecht { color: #C62828; }
+  footer { text-align: right; font-size: 12px; color: #333; margin-top: 6px; }
+
+  #testfenster { position: fixed; inset: 0; z-index: 50; display: none; background: rgba(255,255,255,.5);
+    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); padding: 14px; flex-direction: column; gap: 8px; }
+  #testfenster.zeigen { display: flex; }
+  #testfenster .oben { display: flex; justify-content: flex-end; }
+  #testfenster iframe { flex: 1; width: 100%; border: none; border-radius: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.35); background: #fff; }
+  #kopierfeld { position: fixed; left: -9999px; }
+
+  .korbspalten { display: grid; gap: 12px; }
+  .kspalte { border: 2px solid var(--rand); border-radius: 14px; padding: 8px; background: #fff; min-width: 0; }
+  .kspalte .kname { font-weight: bold; margin-bottom: 8px; }
+  .einst { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 12px 0 4px; }
+  .einst label { font-size: 15px; display: flex; align-items: center; gap: 6px; font-weight: bold; }
+  .einst select { width: auto; font-size: 15px; padding: 5px 8px; font-weight: normal; }
+  .zaehlinfo { font-size: 14px; font-weight: bold; color: #8D4A00; background: #FFF3E0; border-radius: 8px; padding: 4px 10px; display: inline-block; }
+  .zaehlinfo.gut { color: #1B5E20; background: #E8F5E9; }
+  textarea.kartenfeld { font: inherit; font-size: 16px; padding: 6px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; resize: vertical; min-height: 56px; background: #fff; }
+  textarea.kartenfeld:focus { outline: none; border-color: var(--b2); }
+  textarea.gefuellt { border-color: #43A047; background: #F4FBF3; }
+  textarea.leer { border-color: #E53935; background: #FFF5F5; }
+  textarea.doppelt { border-color: #FB8C00; background: #FFF8EC; }
+  .kspalte .kzeile { display: flex; align-items: center; gap: 4px; margin: 5px 0; }
+  .kspalte .kzeile .zelle { flex: 1; }
+  .kspalte .kkopf { font-size: 13px; color: #555; margin: 0 0 4px; }
+  .rkopf select { width: auto; }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <h1>Bingo-Generator der Emil-Petri-Schule Arnstadt</h1>
+    <p>Aufgaben und Lösungen eintragen. Daraus entsteht ein Bingo für die ganze Klasse – am iPad oder mit gedruckten Karten.</p>
+  </header>
+
+  <section>
+    <h2><span class="nr">1</span>Aussehen</h2>
+    <label class="f" for="titel">Titel des Spiels</label>
+    <input type="text" id="titel" value="Bingo" style="max-width:480px">
+    <label class="f">Farbe</label>
+    <div class="farbwahl" id="farbwahl"></div>
+  </section>
+
+  <section>
+    <h2><span class="nr">2</span>Spielregeln, Aufgaben und Lösungen</h2>
+    <div class="hilfebox">
+      Trage in jede Zeile eine <b>Aufgabe</b> und ihre <b>Lösung</b> ein. Die Lehrkraft zeigt vorne die Aufgaben, die Schüler suchen die Lösungen auf ihrer Karte.<br>
+      Jede Karte bekommt eine zufällige Auswahl der Lösungen. Damit sich die Karten unterscheiden, braucht es mehr Aufgaben als Felder:
+      3 × 3 mindestens 12, 4 × 4 mindestens 20, 5 × 5 mindestens 30 (bei 5 × 5 ist das Mittelfeld frei). Jede Lösung darf nur einmal vorkommen.<br>
+      Tipps: <code>3/4</code> wird als Bruch angezeigt, <code>*</code> wird zum Malpunkt. Mit der Eingabetaste springst du ins nächste Feld.
+    </div>
+    <div class="einst">
+      <label>Feldgröße:
+        <select id="groesse"><option value="3">3 × 3</option><option value="4" selected>4 × 4</option><option value="5">5 × 5</option></select></label>
+      <label>Bingo bei:
+        <select id="modus"><option value="reihe">einer vollen Reihe (waagerecht, senkrecht, schräg)</option><option value="voll">vollem Feld</option></select></label>
+    </div>
+    <div id="runden"></div>
+    <button id="neueRunde" style="display:none"></button>
+  </section>
+
+  <section>
+    <h2><span class="nr">3</span>Erstellt von</h2>
+    <label class="f" for="name">Dein Name</label>
+    <input type="text" id="name" placeholder="z. B. Max Mustermann" style="max-width:480px">
+  </section>
+
+  <section>
+    <h2><span class="nr">4</span>Spiel erstellen</h2>
+    <div class="knoepfe">
+      <button class="gross" id="testen">▶ Spiel testen</button>
+      <button class="gross" id="laden">⬇ Spiel herunterladen</button>
+      <button class="hell" id="oeffnen">📂 Gespeichertes Spiel bearbeiten</button>
+      <input type="file" id="datei" accept=".html,.htm" style="display:none">
+      <input type="file" id="bilddatei" accept="image/*" style="display:none">
+    </div>
+    <div id="meldung"></div>
+    <button class="hell" id="kopieren" style="display:none; margin-top:8px">📋 Stattdessen HTML kopieren</button>
+    <div class="hilfebox" style="margin-top:10px">
+      „Spiel herunterladen“ speichert das fertige Spiel sofort als HTML-Datei, auf dem iPad in der App „Dateien“, am PC im Ordner „Downloads“.
+      Die Datei kann man per Doppelklick im Browser öffnen, verschicken oder bei GitHub Pages hochladen. Um ein Spiel später zu ändern, öffne die Datei hier mit „Gespeichertes Spiel bearbeiten“.
+    </div>
+  </section>
+
+  <footer>Erstellt von Marion Klugmann (November 2026) mit freundlicher Unterstützung von Claude.</footer>
+</div>
+
+<div id="testfenster">
+  <div class="oben"><button id="testZu">✕ Test schließen</button></div>
+  <iframe id="testframe" title="Spiel testen"></iframe>
+</div>
+<textarea id="kopierfeld"></textarea>
+
+<script type="text/plain" id="vorlage-bingo"><!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingo</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; overflow: hidden;
+    height: 100vh; height: 100dvh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%); position: relative; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; height: 100%; max-width: 1400px; margin: 0 auto; padding: 12px 14px 8px;
+    display: flex; flex-direction: column; gap: 8px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 55%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 8px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  .titel { flex: 1 1 260px; position: relative; }
+  .titel .schule { font-size: 12px; opacity: .85; letter-spacing: .5px; position: absolute; left: 0; bottom: 100%; margin-bottom: 1px; white-space: nowrap; }
+  .titel h1 { margin: 0; font-size: clamp(18px, 2.3vw, 26px); }
+  header.mitschule { padding-top: 20px; padding-bottom: 12px; }
+  .chips { display: flex; gap: 6px; align-items: center; }
+  .chip { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.45); font-size: 16px; }
+  .chip.aktiv { background: #fff; color: var(--h1); border-color: #fff; transform: scale(1.12); }
+  .chip.fertig { background: #FFD54F; color: #5D4037; border-color: #FFD54F; }
+  .uhr { background: rgba(0,0,0,.22); border-radius: 999px; padding: 6px 14px; font-size: 20px; font-weight: bold;
+    font-variant-numeric: tabular-nums; min-width: 104px; text-align: center; }
+
+  .leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .info { font-size: 17px; flex: 1 1 300px; }
+  #feedback { font-size: 16px; font-weight: bold; min-height: 20px; }
+  #feedback.gut { color: #2E7D32; } #feedback.schlecht { color: #C62828; }
+  .stand { display: flex; gap: 8px; font-size: 15px; }
+  .pill { background: #fff; border: 2px solid #ddd; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+  .pill b.rot { color: #C62828; }
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.15);
+    padding: 9px 26px; font-size: 18px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.hilfe { width: 38px; height: 38px; padding: 0; font-size: 20px; flex: none; background: rgba(255,255,255,.18);
+    border: 2px solid rgba(255,255,255,.55); box-shadow: none; }
+
+  #board { flex: 1; min-height: 0; position: relative; border-radius: 18px; overflow: hidden;
+    border: 2px solid var(--rand); box-shadow: inset 0 2px 10px rgba(0,0,0,.06);
+    background-color: #fffdf7;
+    background-image: radial-gradient(#dcdcd4 1.2px, transparent 1.2px); background-size: 24px 24px; }
+
+  footer { text-align: right; font-size: 12px; color: #333; min-height: 2px; }
+
+  #overlay, #intro { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 50;
+    background: rgba(255,255,255,.5); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+  #overlay.zeigen, #intro.zeigen { display: flex; }
+  .modal { background: #fff; border-radius: 22px; padding: 22px 30px 24px; min-width: 300px; max-width: 92vw; text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,.3); border-top: 8px solid var(--b2); animation: rein .45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes rein { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h2 { margin: 0 0 10px; font-size: 28px; color: var(--h1); }
+  .modal .zeile { font-size: 20px; margin: 6px 0; }
+  .modal .gross { font-size: 24px; font-weight: bold; margin: 12px 0 4px; }
+  .modal .stern { color: #F9A825; }
+  .modal button { margin-top: 14px; }
+  .anleitung { width: 620px; max-height: 92vh; overflow: auto; text-align: left; }
+  .anleitung h2 { text-align: center; }
+  .schritt { display: flex; gap: 14px; align-items: flex-start; padding: 10px 12px; margin: 8px 0; border-radius: 14px; background: var(--hell); font-size: 18px; line-height: 1.35; }
+  .schritt .nr { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--b2); color: #fff; font-weight: bold;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .demo { display: flex; justify-content: center; align-items: center; margin: 4px 0 10px; position: relative; }
+  .demo .dk { width: 92px; height: 58px; border: 2px solid #37474F; border-radius: 10px; background: #fff; font-weight: bold; font-size: 20px;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 #cfd8dc; }
+  .demo .dt { position: absolute; width: 34px; height: 30px; transform: rotate(-10deg); background: rgba(245,232,180,.92);
+    display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .farbe { display: inline-block; padding: 0 7px; border-radius: 5px; color: #fff; font-weight: bold; }
+  .anleitung .knopf { text-align: center; }
+  .anleitung button { font-size: 22px; padding: 11px 40px; }
+  #konfetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
+  .frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; font-size: .85em; vertical-align: middle; }
+  .frac > span:first-child { border-bottom: 2px solid #111; padding: 0 3px 1px; }
+  .frac > span:last-child { padding: 1px 3px 0; }
+  #board { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 14px; }
+  .rolle { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+  .rolle button { font-size: 20px; padding: 14px 22px; }
+  .rolle button.hell { background: #fff; color: var(--h1); border: 2px solid var(--b2); box-shadow: none; font-size: 16px; padding: 10px; }
+  /* Schüler-Karte */
+  .karte { display: grid; gap: 8px; width: min(100%, var(--k)); aspect-ratio: 1; }
+  .feld { background: #fff; border: 2.5px solid #37474F; border-radius: 14px; display: flex; align-items: center; justify-content: center; text-align: center;
+    font-weight: bold; font-size: var(--fs); cursor: pointer; user-select: none; -webkit-user-select: none; position: relative; padding: 4px; line-height: 1.15;
+    box-shadow: 0 3px 0 #cfd8dc; transition: transform .1s; overflow: hidden; }
+  .feld:active { transform: scale(.96); }
+  .feld.an { background: var(--hell); border-color: var(--b2); }
+  .feld.an::after { content: ""; position: absolute; width: 70%; aspect-ratio: 1; border-radius: 50%; border: 5px solid var(--b2); opacity: .55; transform: rotate(-12deg); }
+  .feld.frei { background: linear-gradient(135deg, var(--h1), var(--h3)); color: #fff; border-color: var(--h1); cursor: default; }
+  .feld.frei::after { display: none; }
+  .feld.linie { background: #FFF3C4; border-color: #F9A825; }
+  .seitenleiste { display: flex; flex-direction: column; gap: 10px; align-self: center; }
+  .seitenleiste button { font-size: 16px; padding: 9px 18px; }
+  .seitenleiste .hell { background: #fff; color: var(--h1); border: 2px solid var(--b2); box-shadow: none; }
+  /* Lehrkraft */
+  .tafel { flex: 1 1 60%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; height: 100%; min-width: 0; }
+  .zaehler { font-size: 18px; font-weight: bold; color: var(--h1); }
+  .aufgabe { font-size: clamp(40px, 7vw, 96px); font-weight: bold; text-align: center; background: #fff; border: 4px solid var(--b2); border-radius: 26px;
+    padding: 20px 40px; min-width: 60%; box-shadow: 0 8px 0 var(--rand), 0 14px 30px rgba(0,0,0,.12); line-height: 1.15; }
+  .aufgabe.neu { animation: rein .5s cubic-bezier(.34,1.56,.64,1); }
+  .loesung { font-size: clamp(22px, 3vw, 36px); color: #2E7D32; font-weight: bold; min-height: 1.3em; }
+  .tknoepfe { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .tknoepfe button { font-size: 20px; padding: 12px 28px; }
+  .tknoepfe .hell { background: #fff; color: var(--h1); border: 2px solid var(--b2); box-shadow: none; font-size: 16px; }
+  .gezogen { flex: 0 0 min(32%, 340px); height: 100%; overflow: auto; background: #fff; border: 2px solid var(--rand); border-radius: 16px; padding: 10px 14px; }
+  .gezogen h3 { margin: 0 0 6px; font-size: 15px; color: var(--h1); text-transform: uppercase; letter-spacing: .06em; }
+  .gezogen ol { margin: 0; padding-left: 26px; font-size: 16px; line-height: 1.6; }
+  .gezogen li b { color: #2E7D32; }
+  @media (max-width: 760px) { #board { flex-direction: column; } .gezogen { flex: 0 0 auto; max-height: 30%; width: 100%; } .seitenleiste { flex-direction: row; flex-wrap: wrap; justify-content: center; } }
+  /* Druck */
+  #druck { display: none; }
+  @media print {
+    @page { size: A4; margin: 12mm; }
+    body { background: #fff !important; padding: 0; height: auto; overflow: visible; }
+    .blasen, .app, #overlay, #intro, #konfetti { display: none !important; }
+    #druck { display: block; color: #000; font-family: Arial, sans-serif; }
+    .dkarte { height: 134mm; box-sizing: border-box; padding: 4mm 0; break-inside: avoid; display: flex; flex-direction: column; align-items: center; }
+    .dkarte:nth-child(2n) { break-after: page; border-top: 1px dashed #999; }
+    .dkarte h2 { margin: 0 0 1mm; font-size: 16pt; } .dkarte .s { font-size: 8pt; color: #555; margin-bottom: 3mm; }
+    .dkarte table { border-collapse: collapse; }
+    .dkarte table { table-layout: fixed; } .dkarte td { box-sizing: border-box; border: 1.5px solid #000; text-align: center; vertical-align: middle; font-weight: bold; padding: 1mm; }
+    .dkarte td.frei { background: #ddd; }
+    .dliste { break-before: page; } .dliste h2 { font-size: 15pt; } .dliste table { border-collapse: collapse; width: 100%; font-size: 11pt; }
+    .dliste td { border: 1px solid #999; padding: 1.5mm 2mm; } .dliste td:nth-child(1), .dliste td:nth-child(2) { width: 9mm; } .dfuss { text-align: right; font-size: 8pt; margin-top: 2mm; }
+  }
+  #druckfenster .modal input { font: inherit; font-size: 22px; width: 110px; text-align: center; padding: 6px; border: 2px solid #cfd8dc; border-radius: 10px; }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <div class="titel" id="titelbox">
+      <div class="schule" id="schule"></div>
+      <h1 id="titel">Bingo</h1>
+    </div>
+    <button class="hilfe" id="hilfe" title="Anleitung">?</button>
+  </header>
+  <div class="leiste">
+    <div class="info" id="info"></div>
+    <div id="feedback"></div>
+    <div class="stand" id="stand"></div>
+  </div>
+  <div id="board"></div>
+  <footer id="fuss"></footer>
+</div>
+<div id="overlay"><div class="modal" id="modal"></div></div>
+<div id="intro" class="zeigen"><div class="modal anleitung" id="anleitung">
+  <h2>Bingo</h2>
+  <div class="schritt"><div class="nr">1</div><div>Die Lehrkraft zeigt vorne nacheinander <b>Aufgaben</b>. Jeder hat eine eigene Bingo-Karte mit <b>Lösungen</b>.</div></div>
+  <div class="schritt"><div class="nr">2</div><div>Rechne die Aufgabe. Steht die Lösung auf deiner Karte, <b>tippe sie an</b>. Sie wird markiert. Nochmal tippen hebt die Markierung auf.</div></div>
+  <div class="schritt"><div class="nr">3</div><div id="zielText">Hast du eine <b>volle Reihe</b> – waagerecht, senkrecht oder schräg –, ruf laut <b>„Bingo!“</b> und zeig deine Karte der Lehrkraft.</div></div>
+  <div class="rolle" id="rolle">
+    <button id="losgehts">Ich spiele mit – meine Bingo-Karte ➜</button>
+    <button class="hell" id="lehrkraft">Lehrkraft: Aufgaben vorne zeigen</button>
+  </div>
+</div></div>
+<canvas id="konfetti"></canvas>
+<div id="druck"></div>
+
+<script type="application/json" id="spieldaten">/*__DATEN__*/<\/script>
+<script>
+const FARBEN = {
+  tuerkis: { r: ['#00585C', '#00897B', '#26C6DA', '#84E3EC'], h: ['#00616A', '#00838F', '#1FB5C6'], b: ['#26B5A6', '#00897B', '#00695C'], hell: '#EAF8F8', rand: '#C5E8EA' },
+  rot:     { r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' }
+};
+function ladeDaten(ersatz) {
+  try { const d = JSON.parse(document.getElementById('spieldaten').textContent); if (d) return d; } catch (e) {}
+  return ersatz;
+}
+function basisEinrichten(D) {
+  const f = FARBEN[D.farbe] || FARBEN.rot, s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c));
+  f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c));
+  s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand);
+  document.title = D.titel || document.title;
+  document.getElementById('titel').textContent = D.titel || document.title;
+  document.getElementById('schule').textContent = D.schule || '';
+  if (D.schule) document.querySelector('header').classList.add('mitschule');
+  if (D.name) document.getElementById('fuss').textContent =
+    'Erstellt von ' + D.name + (D.monat ? ' (' + D.monat + ')' : '') + (D.ki ? ' mit freundlicher Unterstützung von ' + D.ki : '') + '.';
+  const intro = document.getElementById('intro');
+  document.getElementById('losgehts').onclick = () => intro.classList.remove('zeigen');
+  document.getElementById('hilfe').onclick = () => intro.classList.add('zeigen');
+  const b = document.getElementById('blasen');
+  for (let i = 0; i < 26; i++) {
+    const sp = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    sp.style.width = sp.style.height = d + 'px';
+    sp.style.left = (Math.random() * 100) + '%';
+    sp.style.animationDuration = (14 + Math.random() * 18) + 's';
+    sp.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(sp);
+  }
+}
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function fmt(t) {
+  let h = esc(String(t).trim());
+  h = h.replace(/(\d+(?:,\d+)?)\s*\/\s*(\d+(?:,\d+)?)/g, '<span class="frac"><span>$1</span><span>$2</span></span>');
+  h = h.replace(/\s*\*\s*/g, '&nbsp;·&nbsp;');
+  h = h.replace(/(\d) (%|‰)/g, '$1&#8239;$2');
+  return h;
+}
+function laenge(t) { if (t && typeof t === 'object') return 0; return String(t).replace(/\d+\s*\/\s*\d+/g, 'xx').replace(/\s+/g, ' ').trim().length; }
+const istBild = t => t && typeof t === 'object' && t.bild;
+function karteHTML(t) { return istBild(t) ? `<img src="${t.bild}" alt="">` : fmt(t); }
+function sprechText(t) { return istBild(t) ? '' : String(t).replace(/\*/g, ' mal ').trim(); }
+const mmss = ms => { const s = Math.floor(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+
+function vorlesen(text, sprache, el) {
+  if (!text || !sprache || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = sprache; u.rate = .9;
+    const st = speechSynthesis.getVoices().filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(sprache.slice(0, 2).toLowerCase()));
+    const genau = st.find(v => v.lang.replace('_', '-').toLowerCase() === sprache.toLowerCase());
+    if (genau || st[0]) u.voice = genau || st[0];
+    if (el) { el.classList.add('redet'); u.onend = u.onerror = () => el.classList.remove('redet'); setTimeout(() => el.classList.remove('redet'), 4000); }
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); } catch (e) {} }
+
+function konfetti() {
+  const cv = document.getElementById('konfetti'), cx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const farben = ['#FFD54F', '#4FC3F7', '#81C784', '#F06292', '#BA68C8', '#FF8A65'];
+  const teile = Array.from({ length: 140 }, () => ({
+    x: innerWidth / 2 + (Math.random() - .5) * 200, y: innerHeight * .4,
+    vx: (Math.random() - .5) * 16, vy: -Math.random() * 14 - 4, r: Math.random() * 6 + 4,
+    f: farben[Math.floor(Math.random() * farben.length)], a: Math.random() * 6, va: (Math.random() - .5) * .3 }));
+  let n = 0;
+  (function schritt() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    teile.forEach(t => {
+      t.vy += .35; t.x += t.vx; t.y += t.vy; t.vx *= .99; t.a += t.va;
+      cx.save(); cx.translate(t.x, t.y); cx.rotate(t.a); cx.fillStyle = t.f;
+      cx.fillRect(-t.r, -t.r / 2, t.r * 2, t.r); cx.restore();
+    });
+    if (++n < 160) requestAnimationFrame(schritt); else cx.clearRect(0, 0, cv.width, cv.height);
+  })();
+}
+function zeigeModal(html, knoepfe) {
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('overlay').classList.add('zeigen');
+  konfetti();
+  Object.entries(knoepfe || {}).forEach(([id, fn]) => { const b = document.getElementById(id); if (b) b.onclick = fn; });
+}
+
+const D = ladeDaten({ titel: 'Einmaleins-Bingo', schule: '', farbe: 'pink', name: '', groesse: 4, modus: 'reihe',
+  paare: Array.from({ length: 24 }, (_, i) => { const a = 3 + (i % 7), b = 2 + Math.floor(i / 7) * 2 + (i % 2); return [a + ' * ' + b, String(a * b)]; })
+    .filter((p, i, arr) => arr.findIndex(q => q[1] === p[1]) === i) });
+basisEinrichten(D);
+const N = D.groesse, P = D.paare, frei = N === 5;
+const board = document.getElementById('board'), fb = document.getElementById('feedback');
+let rolle = null;
+if (D.modus === 'voll') document.getElementById('zielText').innerHTML = 'Sind <b>alle Felder</b> deiner Karte markiert, ruf laut <b>„Bingo!“</b> und zeig deine Karte der Lehrkraft.';
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+document.getElementById('losgehts').addEventListener('click', () => { if (rolle !== 'schueler') { rolle = 'schueler'; schuelerStart(); } });
+document.getElementById('lehrkraft').addEventListener('click', () => { document.getElementById('intro').classList.remove('zeigen'); if (rolle !== 'lehrer') { rolle = 'lehrer'; lehrerStart(); } });
+document.getElementById('hilfe').addEventListener('click', () => { document.getElementById('rolle').style.display = rolle ? 'none' : 'flex'; if (rolle) setTimeout(schliessKnopf, 0); });
+function schliessKnopf() {
+  const a = document.getElementById('anleitung');
+  if (!a.querySelector('.zu')) { const d = document.createElement('div'); d.className = 'knopf zu'; d.innerHTML = '<button>Weiter ➜</button>';
+    d.querySelector('button').onclick = () => document.getElementById('intro').classList.remove('zeigen'); a.appendChild(d); }
+}
+
+/* ================= Schüler ================= */
+let markiert = new Set(), bingoGemeldet = false, feldInhalt = [];
+function schuelerStart() {
+  document.getElementById('info').innerHTML = D.modus === 'voll' ? '<b>Bingo-Karte:</b> Markiere die Lösungen. Bingo bei vollem Feld!' : '<b>Bingo-Karte:</b> Markiere die Lösungen. Bingo bei einer vollen Reihe!';
+  neueKarte();
+  addEventListener('resize', schuelerMasse);
+}
+function neueKarte() {
+  const anzahl = N * N - (frei ? 1 : 0);
+  const loes = shuffle(P.map(p => p[1])).slice(0, anzahl);
+  feldInhalt = []; let k = 0;
+  for (let i = 0; i < N * N; i++) feldInhalt.push(frei && i === Math.floor(N * N / 2) ? null : loes[k++]);
+  markiert = new Set(frei ? [Math.floor(N * N / 2)] : []); bingoGemeldet = false;
+  board.innerHTML = `<div class="karte" id="karte" style="grid-template-columns:repeat(${N},1fr)">${feldInhalt.map((t, i) =>
+    t === null ? `<div class="feld frei" data-i="${i}">FREI</div>` : `<div class="feld" data-i="${i}">${fmt(t)}</div>`).join('')}</div>
+    <div class="seitenleiste"><button class="hell" id="neu">🔀 Neue Karte</button></div>`;
+  document.getElementById('karte').addEventListener('click', e => {
+    const f = e.target.closest('.feld'); if (!f || f.classList.contains('frei')) return;
+    const i = +f.dataset.i; markiert.has(i) ? markiert.delete(i) : markiert.add(i);
+    f.classList.toggle('an', markiert.has(i)); pruefeBingo();
+  });
+  document.getElementById('neu').addEventListener('click', ev => {
+    const b = ev.currentTarget;
+    if (b.dataset.sicher !== '1') { b.dataset.sicher = '1'; b.textContent = 'Wirklich neue Karte?'; setTimeout(() => { if (b.isConnected) { b.dataset.sicher = ''; b.textContent = '🔀 Neue Karte'; } }, 3000); return; }
+    neueKarte();
+  });
+  schuelerMasse(); zeigeStandS();
+}
+function schuelerMasse() {
+  const k = document.getElementById('karte'); if (!k) return;
+  const s = Math.min(board.clientHeight - 30, board.clientWidth - 230, 760);
+  k.style.setProperty('--k', Math.max(240, s) + 'px');
+  const fs = Math.max(13, Math.min(34, s / N * .26));
+  k.style.setProperty('--fs', fs + 'px');
+  k.querySelectorAll('.feld').forEach((f, i) => { const t = feldInhalt[i]; if (t && laenge(t) > 6) f.style.fontSize = Math.max(11, fs * (laenge(t) > 11 ? .62 : .8)) + 'px'; });
+}
+function linien() {
+  const L = [];
+  for (let r = 0; r < N; r++) L.push(Array.from({ length: N }, (_, c) => r * N + c));
+  for (let c = 0; c < N; c++) L.push(Array.from({ length: N }, (_, r) => r * N + c));
+  L.push(Array.from({ length: N }, (_, i) => i * N + i), Array.from({ length: N }, (_, i) => i * N + (N - 1 - i)));
+  return L;
+}
+function pruefeBingo() {
+  const voll = linien().filter(l => l.every(i => markiert.has(i)));
+  document.querySelectorAll('.feld').forEach(f => f.classList.remove('linie'));
+  let bingo;
+  if (D.modus === 'voll') bingo = markiert.size === N * N;
+  else { voll.forEach(l => l.forEach(i => document.querySelector(`.feld[data-i="${i}"]`).classList.add('linie'))); bingo = voll.length > 0; }
+  zeigeStandS();
+  if (bingo && !bingoGemeldet) {
+    bingoGemeldet = true;
+    zeigeModal(`<h2 style="font-size:54px">BINGO! 🎉</h2><div class="gross">Ruf laut „Bingo!“ und zeig deine Karte der Lehrkraft.</div>
+      <button id="weiterspielen">Weiterspielen</button>`, { weiterspielen: () => document.getElementById('overlay').classList.remove('zeigen') });
+  }
+  if (!bingo) bingoGemeldet = false;
+}
+function zeigeStandS() { document.getElementById('stand').innerHTML = `<span class="pill">Markiert: <b>${markiert.size - (frei ? 1 : 0)}</b></span>`; }
+
+/* ================= Lehrkraft ================= */
+let reihe = [], pos = -1, loesungZeigen = false;
+function lehrerStart() {
+  document.getElementById('info').innerHTML = '<b>Lehrkraft-Ansicht:</b> Zeige die Aufgaben nacheinander. Die Lösungen bleiben verborgen, bis du sie einblendest.';
+  reihe = shuffle(P.map((p, i) => i)); pos = -1;
+  board.innerHTML = `<div class="tafel">
+      <div class="zaehler" id="zaehler"></div>
+      <div class="aufgabe" id="aufgabe">Bereit?</div>
+      <div class="loesung" id="loesung"></div>
+      <div class="tknoepfe">
+        <button id="naechste">Nächste Aufgabe ➜</button>
+        <button class="hell" id="zeigLoesung">👁 Lösung zeigen</button>
+        <button class="hell" id="vonvorn">↺ Von vorn</button>
+        <button class="hell" id="drucken">🖨 Karten drucken</button>
+      </div></div>
+    <div class="gezogen"><h3>Schon gezogen</h3><ol id="liste"></ol></div>`;
+  document.getElementById('naechste').onclick = naechste;
+  document.getElementById('zeigLoesung').onclick = () => { loesungZeigen = !loesungZeigen; zeigeAktuell(false); };
+  document.getElementById('vonvorn').onclick = ev => {
+    const b = ev.currentTarget;
+    if (b.dataset.sicher !== '1') { b.dataset.sicher = '1'; b.textContent = 'Wirklich von vorn?'; setTimeout(() => { if (b.isConnected) { b.dataset.sicher = ''; b.textContent = '↺ Von vorn'; } }, 3000); return; }
+    lehrerStart();
+  };
+  document.getElementById('drucken').onclick = druckDialog;
+  zeigeAktuell(false);
+}
+function naechste() {
+  if (pos >= reihe.length - 1) { fb.className = 'schlecht'; fb.textContent = 'Alle Aufgaben sind gezogen.'; return; }
+  pos++; loesungZeigen = false; zeigeAktuell(true);
+}
+function zeigeAktuell(neu) {
+  const a = document.getElementById('aufgabe'), l = document.getElementById('loesung');
+  document.getElementById('zaehler').textContent = pos < 0 ? `${P.length} Aufgaben im Topf` : `Aufgabe ${pos + 1} von ${P.length}`;
+  if (pos >= 0) { const p = P[reihe[pos]]; a.innerHTML = fmt(p[0]); l.innerHTML = loesungZeigen ? '= ' + fmt(p[1]) : ''; }
+  if (neu) { a.classList.remove('neu'); void a.offsetWidth; a.classList.add('neu'); }
+  document.getElementById('zeigLoesung').textContent = loesungZeigen ? '🙈 Lösung verbergen' : '👁 Lösung zeigen';
+  document.getElementById('liste').innerHTML = reihe.slice(0, pos + 1).map(i => `<li>${fmt(P[i][0])} = <b>${fmt(P[i][1])}</b></li>`).join('');
+  const li = document.getElementById('liste'); li.parentElement.scrollTop = li.parentElement.scrollHeight;
+  document.getElementById('stand').innerHTML = `<span class="pill">gezogen: <b>${pos + 1}/${P.length}</b></span>`;
+  fb.textContent = ''; fb.className = '';
+}
+
+/* ================= Karten drucken ================= */
+function druckDialog() {
+  document.getElementById('modal').innerHTML = (`<h2>Bingo-Karten drucken</h2><div class="zeile">Wie viele verschiedene Karten?</div>
+    <div style="margin:10px 0"><input type="number" id="anzahlKarten" min="1" max="40" value="30"></div>
+    <div class="zeile" style="font-size:15px;color:#555">Je 2 Karten pro A4-Seite. Am Ende kommt eine Aufgabenliste für dich.</div>
+    <button id="jetztDrucken">🖨 Drucken</button> <button id="abbrechen" style="background:#fff;color:#555;border:2px solid #ccc;box-shadow:none">Abbrechen</button>`);
+  document.getElementById('overlay').classList.add('zeigen');
+  document.getElementById('abbrechen').onclick = () => document.getElementById('overlay').classList.remove('zeigen');
+  document.getElementById('jetztDrucken').onclick = () => {
+      const n = Math.max(1, Math.min(40, +document.getElementById('anzahlKarten').value || 30));
+      document.getElementById('overlay').classList.remove('zeigen'); baueDruck(n); try { window.print(); } catch (e) {} };
+}
+function baueDruck(n) {
+  const fuss = document.getElementById('fuss').textContent, mm = N === 3 ? 33 : N === 4 ? 25 : 20, fs = N === 3 ? 18 : N === 4 ? 15 : 12;
+  let h = '';
+  for (let k = 0; k < n; k++) {
+    const loes = shuffle(P.map(p => p[1])).slice(0, N * N - (frei ? 1 : 0)); let j = 0;
+    h += `<div class="dkarte"><h2>${esc(D.titel)}</h2><div class="s">${esc(D.schule || '')} · Karte ${k + 1}</div><table>`;
+    for (let r = 0; r < N; r++) { h += '<tr>'; for (let c = 0; c < N; c++) { const mitte = frei && r * N + c === Math.floor(N * N / 2);
+      h += mitte ? `<td class="frei" style="width:${mm}mm;height:${mm}mm;font-size:${fs}pt">FREI</td>` : `<td style="width:${mm}mm;height:${mm}mm;font-size:${fs}pt">${fmt(loes[j++])}</td>`; } h += '</tr>'; }
+    h += '</table></div>';
+  }
+  h += `<div class="dliste"><h2>${esc(D.titel)} – Aufgabenliste für die Lehrkraft</h2><table>${P.map((p, i) => `<tr><td>☐</td><td>${i + 1}.</td><td>${fmt(p[0])}</td><td><b>${fmt(p[1])}</b></td></tr>`).join('')}</table>
+    ${fuss ? `<div class="dfuss">${esc(fuss)}</div>` : ''}</div>`;
+  document.getElementById('druck').innerHTML = h;
+}
+<\/script>
+</body>
+</html>
+</script>
+<script>
+const FARBEN = {
+  rot:     { name: 'Rot',    r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { name: 'Grün',   r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { name: 'Blau',   r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { name: 'Pink',   r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' },
+};
+const SPRACHEN = [['', 'nicht vorlesen'], ['de-DE', 'Deutsch'], ['en-GB', 'Englisch'], ['fr-FR', 'Französisch']];
+const MAXB = 50;
+const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const SCHULE = 'Emil-Petri-Schule Arnstadt';
+const $ = id => document.getElementById(id);
+const MINZ = { 3: 12, 4: 20, 5: 30 };
+let D = { titel: 'Bingo', farbe: 'rot', name: '', groesse: 4, modus: 'reihe', paare: Array.from({ length: 20 }, () => ['', '']) };
+$('groesse').onchange = () => { D.groesse = +$('groesse').value; while (D.paare.length < MINZ[D.groesse]) D.paare.push(['', '']); zeichneRunden(); };
+$('modus').onchange = () => { D.modus = $('modus').value; };
+
+function farbeSetzen(k) {
+  D.farbe = k;
+  const f = FARBEN[k], s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c));
+  f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c));
+  s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand);
+  document.querySelectorAll('#farbwahl button').forEach(b => b.classList.toggle('an', b.dataset.k === k));
+}
+$('farbwahl').innerHTML = Object.entries(FARBEN).map(([k, f]) =>
+  `<button type="button" data-k="${k}"><span class="kreis" style="background:linear-gradient(135deg,${f.r[1]},${f.r[2]})"></span>${f.name}</button>`).join('');
+$('farbwahl').addEventListener('click', e => { const b = e.target.closest('button'); if (b) farbeSetzen(b.dataset.k); });
+
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+const istBild = t => t && typeof t === 'object' && t.bild;
+
+function zeichneRunden() {
+  const n = D.paare.length, min = MINZ[D.groesse], gefuellt = D.paare.filter(p => String(p[0]).trim() && String(p[1]).trim()).length;
+  $('runden').innerHTML = `<div class="runde" data-r="0"><div class="rinhalt">
+    <div class="zaehlinfo ${gefuellt >= min ? 'gut' : ''}">${gefuellt} von mindestens ${min} Aufgaben ausgefüllt${gefuellt >= min ? ' ✔' : ''}</div>
+    <div class="kopfzeile" style="margin-top:4px"><span class="gnr" style="visibility:hidden">0.</span>
+      <label style="font-weight:bold;color:#333">Aufgabe</label><span class="verb" style="visibility:hidden">→</span>
+      <label style="font-weight:bold;color:#333">Lösung</label><span style="width:34px"></span></div>
+    ${D.paare.map((p, ci) => `<div class="zeile">
+        <span class="gnr">${ci + 1}.</span>
+        <input type="text" class="kartenfeld" data-c="${ci}" data-k="0" value="${esc(p[0])}" placeholder="Aufgabe ${ci + 1}">
+        <span class="verb">→</span>
+        <input type="text" class="kartenfeld" data-c="${ci}" data-k="1" value="${esc(p[1])}" placeholder="Lösung ${ci + 1}">
+        <button class="weg" data-akt="karteWeg" data-c="${ci}" title="Zeile löschen">✕</button>
+      </div>`).join('')}
+    ${n < MAXB ? `<button class="hell" data-akt="karteNeu" style="margin-top:6px">＋ Aufgabe</button>
+       <span class="klein" style="margin-left:8px">noch ${MAXB - n} möglich</span>` : `<div class="voll">Höchstens ${MAXB} Aufgaben.</div>`}
+    <div class="meld"></div></div></div>`;
+  pruefeEingaben(false);
+}
+$('runden').addEventListener('input', e => {
+  const x = e.target; if (!x.classList.contains('kartenfeld')) return;
+  D.paare[+x.dataset.c][+x.dataset.k] = x.value;
+  pruefeEingaben(false);
+  const min = MINZ[D.groesse], g = D.paare.filter(p => String(p[0]).trim() && String(p[1]).trim()).length, z = document.querySelector('.zaehlinfo');
+  if (z) { z.textContent = `${g} von mindestens ${min} Aufgaben ausgefüllt${g >= min ? ' ✔' : ''}`; z.classList.toggle('gut', g >= min); }
+});
+$('runden').addEventListener('click', e => {
+  const b = e.target.closest('button[data-akt]'); if (!b) return;
+  const c = +b.dataset.c;
+  if (b.dataset.akt === 'karteNeu') { if (D.paare.length < MAXB) D.paare.push(['', '']); }
+  if (b.dataset.akt === 'karteWeg') { if (D.paare.length > MINZ[D.groesse]) D.paare.splice(c, 1); else return meldung('Für ' + D.groesse + ' × ' + D.groesse + ' braucht es mindestens ' + MINZ[D.groesse] + ' Aufgaben.', false); }
+  zeichneRunden();
+  if (b.dataset.akt === 'karteNeu') { const f = document.querySelectorAll('.kartenfeld[data-k="0"]'); f[f.length - 1].focus(); }
+});
+$('runden').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  e.preventDefault();
+  const alle = [...document.querySelectorAll('#runden input')], i = alle.indexOf(e.target);
+  if (alle[i + 1]) alle[i + 1].focus(); else if (D.paare.length < MAXB) { D.paare.push(['', '']); zeichneRunden(); const f = document.querySelectorAll('.kartenfeld[data-k="0"]'); f[f.length - 1].focus(); }
+});
+
+function bildFehler(ziel, text) {
+  const m = document.querySelector(`.runde[data-r="${ziel.r}"] .meld`);
+  if (m) m.innerHTML = `<div class="hinweis fehl">${text}</div>`;
+  meldung(text, false);
+}
+$('bilddatei').addEventListener('change', () => {
+  const f = $('bilddatei').files && $('bilddatei').files[0];
+  const ziel = bildZiel; bildZiel = null;
+  if (!f || !ziel) { $('bilddatei').value = ''; return; }
+  const heic = /heic|heif/i.test(f.type + f.name);
+  const rd = new FileReader();
+  rd.onerror = () => bildFehler(ziel, 'Das Bild konnte nicht gelesen werden. Bitte ein anderes Bild versuchen.');
+  rd.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      let url;
+      try {
+        const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, s = Math.min(1, 360 / w, 240 / h);
+        const cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(w * s)); cv.height = Math.max(1, Math.round(h * s));
+        const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+        cx.drawImage(img, 0, 0, cv.width, cv.height);
+        url = cv.toDataURL('image/jpeg', .82);
+      } catch (e) { url = String(rd.result); }
+      D.runden[ziel.r].paare[ziel.c][ziel.k] = { bild: url };
+      zeichneRunden(); meldung('', true);
+    };
+    img.onerror = () => bildFehler(ziel, heic
+      ? 'Dieses Bild ist im Format HEIC (iPhone/iPad-Foto) und kann hier nicht geöffnet werden. Bitte als JPG oder PNG speichern, z. B. über ein Bildschirmfoto.'
+      : 'Dieses Bild konnte nicht geöffnet werden. Bitte ein JPG- oder PNG-Bild verwenden.');
+    img.src = String(rd.result);
+  };
+  rd.readAsDataURL(f);
+  $('bilddatei').value = '';
+});
+
+/* Enter springt ins nächste Feld */
+$('runden').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  e.preventDefault();
+  const alle = [...document.querySelectorAll('#runden input')], i = alle.indexOf(e.target);
+  if (alle[i + 1]) alle[i + 1].focus();
+});
+
+function norm(t) { return istBild(t) ? '' : String(t).trim().replace(/\s+/g, ' ').toLowerCase(); }
+function pruefeEingaben(streng) {
+  let ok = true;
+  const loes = {}; D.paare.forEach(p => { const n = norm(p[1]); if (n) loes[n] = (loes[n] || 0) + 1; });
+  let leer = 0, doppelt = [];
+  document.querySelectorAll('.kartenfeld').forEach(inp => {
+    const n = norm(inp.value); inp.classList.toggle('gefuellt', !!n); inp.classList.toggle('leer', streng && !n); if (!n) leer++;
+    const d = inp.dataset.k === '1' && n && loes[n] > 1; inp.classList.toggle('doppelt', !!d); if (d && !doppelt.includes(inp.value.trim())) doppelt.push(inp.value.trim());
+  });
+  let h = '';
+  if (streng && leer) { h += `<div class="hinweis fehl">Bitte alle Felder ausfüllen (${leer} leer) oder leere Zeilen mit ✕ löschen.</div>`; ok = false; }
+  if (doppelt.length) { h += `<div class="hinweis ${streng ? 'fehl' : 'warn'}">Diese Lösung kommt mehrmals vor: <b>${doppelt.map(esc).join(', ')}</b>. Beim Bingo muss jede Lösung anders sein.</div>`; if (streng) ok = false; }
+  const m = document.querySelector('.meld'); if (m) m.innerHTML = h;
+  return ok;
+}
+
+function monatJahr() { const d = new Date(); return MONATE[d.getMonth()] + ' ' + d.getFullYear(); }
+$('name').addEventListener('input', () => { D.name = $('name').value; });
+$('titel').addEventListener('input', () => { D.titel = $('titel').value; });
+
+function spielHTML() {
+  const daten = {
+    spielart: 'bingo', titel: $('titel').value.trim() || 'Bingo',
+    schule: SCHULE, farbe: D.farbe, name: $('name').value.trim(), ki: 'Claude', monat: monatJahr(),
+    groesse: D.groesse, modus: D.modus, paare: D.paare.map(p => p.map(t => String(t).trim()))
+  };
+  const json = JSON.stringify(daten).replace(/</g, '\\u003c');
+  return $('vorlage-bingo').textContent.replace(/<\\\/script>/g, '</' + 'script>').replace('/*__DATEN__*/', () => json)
+    .replace('<title>Bingo</title>', () => '<title>' + esc(daten.titel) + '</title>');
+}
+function bereit() {
+  const g = D.paare.filter(p => String(p[0]).trim() && String(p[1]).trim()).length;
+  if (g < MINZ[D.groesse]) { meldung('Für ' + D.groesse + ' × ' + D.groesse + ' braucht es mindestens ' + MINZ[D.groesse] + ' Aufgaben (bisher ' + g + ').', false); return false; }
+  if (!pruefeEingaben(true)) { meldung('Bitte die rot oder orange markierten Felder prüfen.', false);
+    const f = document.querySelector('.leer, .doppelt'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); return false; }
+  return true;
+}
+function meldung(t, gut) { const m = $('meldung'); m.textContent = t; m.className = gut ? 'gut' : 'schlecht'; }
+function kopierenAnbieten() { $('kopieren').style.display = 'inline-block'; }
+function dateiname() {
+  return ($('titel').value.trim() || 'Bingo').replace(/[äÄ]/g, 'ae').replace(/[öÖ]/g, 'oe').replace(/[üÜ]/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') + '.html';
+}
+$('testen').onclick = () => {
+  if (!bereit()) return;
+  $('testframe').srcdoc = spielHTML();
+  $('testfenster').classList.add('zeigen');
+};
+$('testZu').onclick = () => { $('testfenster').classList.remove('zeigen'); $('testframe').srcdoc = ''; };
+
+let claudeDownloads = null;
+try { if (window.claude && claude.use) claude.use('downloads').then(d => { claudeDownloads = d; }).catch(() => {}); } catch (e) {}
+
+$('laden').onclick = async () => {
+  if (!bereit()) return;
+  const html = spielHTML(), name = dateiname();
+  if (claudeDownloads) {
+    try { await claudeDownloads.save({ filename: name, data: html }); meldung('Das Spiel wurde als „' + name + '“ gespeichert.', true); }
+    catch (e) { if (e && e.code === 'declined') meldung('Speichern abgebrochen.', false); else { meldung('Herunterladen geht hier leider nicht.', false); kopierenAnbieten(); } }
+    return;
+  }
+  try {
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    meldung('Das Spiel wird als „' + name + '“ heruntergeladen.', true); kopierenAnbieten();
+  } catch (e) { { meldung('Herunterladen geht hier leider nicht.', false); kopierenAnbieten(); } }
+};
+
+$('kopieren').onclick = async () => {
+  if (!bereit()) return;
+  const h = spielHTML();
+  try { await navigator.clipboard.writeText(h); meldung('Kopiert! Den Text in eine leere Datei einfügen und als .html speichern.', true); }
+  catch (e) {
+    const t = $('kopierfeld'); t.value = h; t.select();
+    try { document.execCommand('copy'); meldung('Kopiert! Den Text in eine leere Datei einfügen und als .html speichern.', true); }
+    catch (e2) { meldung('Kopieren hat nicht geklappt.', false); }
+  }
+};
+
+/* ---------- Gespeichertes Spiel öffnen ---------- */
+$('oeffnen').onclick = () => $('datei').click();
+$('datei').onchange = () => {
+  const f = $('datei').files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    const m = String(rd.result).match(/<script type="application\/json" id="spieldaten">([\s\S]*?)<\/script>/);
+    let d = null; try { d = m && JSON.parse(m[1]); } catch (e) {}
+    if (!d || d.spielart !== 'bingo' || !d.paare) return meldung('In dieser Datei wurde kein Spiel aus dem Bingo-Generator gefunden.', false);
+    D = { titel: d.titel, farbe: FARBEN[d.farbe] ? d.farbe : 'rot', name: d.name || '', groesse: [3, 4, 5].includes(+d.groesse) ? +d.groesse : 4,
+      modus: d.modus === 'voll' ? 'voll' : 'reihe', paare: d.paare.slice(0, MAXB) };
+    formularFuellen();
+    meldung('Spiel „' + d.titel + '“ geladen. Du kannst es jetzt ändern.', true);
+  };
+  rd.readAsText(f); $('datei').value = '';
+};
+function formularFuellen() {
+  $('titel').value = D.titel || ''; $('name').value = D.name || '';
+  $('groesse').value = D.groesse; $('modus').value = D.modus;
+  farbeSetzen(D.farbe || 'rot'); zeichneRunden();
+}
+/* ---------- Blubberblasen ---------- */
+(function () {
+  const b = $('blasen');
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.animationDuration = (14 + Math.random() * 18) + 's';
+    s.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(s);
+  }
+})();
+
+formularFuellen();
+</script>
+</body>
+</html>

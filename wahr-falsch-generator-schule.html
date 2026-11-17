@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wahr-oder-falsch-Generator Schule</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; min-height: 100vh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%) fixed; transition: background .4s; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 14px 18px 10px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 40%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 12px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  header h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+  header p { margin: 4px 0 0; opacity: .9; font-size: 15px; }
+
+  section { background: #fff; border: 2px solid var(--rand); border-radius: 18px; padding: 14px 18px 16px; margin: 14px 0; }
+  section > h2 { margin: 0 0 10px; font-size: 20px; color: var(--h1); display: flex; align-items: center; gap: 10px; }
+  section > h2 .nr { width: 30px; height: 30px; border-radius: 50%; background: var(--b2); color: #fff; font-size: 16px;
+    display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  label.f { display: block; font-weight: bold; font-size: 15px; margin: 10px 0 4px; }
+  .klein { font-weight: normal; color: #555; font-size: 13px; }
+  input[type=text], select { font: inherit; font-size: 17px; padding: 8px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; background: #fff; }
+  input[type=text]:focus, select:focus { outline: none; border-color: var(--b2); }
+  input.gefuellt { border-color: #43A047; background: #F4FBF3; }
+  input.leer { border-color: #E53935; background: #FFF5F5; }
+  input.doppelt { border-color: #FB8C00; background: #FFF8EC; }
+  .zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 640px) { .zwei { grid-template-columns: 1fr; } }
+
+  .spielart { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  @media (max-width: 640px) { .spielart { grid-template-columns: 1fr; } }
+  .spielart button { background: #fff; color: #333; border: 3px solid #e0e0e0; box-shadow: none; border-radius: 16px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px; text-align: left; font-size: 16px; }
+  .spielart button .gr { font-size: 34px; }
+  .spielart button small { display: block; font-weight: normal; color: #666; font-size: 13px; margin-top: 2px; }
+  .spielart button.an { border-color: var(--b2); background: var(--hell); color: var(--h1); }
+  body.memory .nurKleben { display: none !important; }
+  .farbwahl { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+  .farbwahl button { width: auto; display: flex; flex-direction: column; align-items: center; gap: 9px; background: none; box-shadow: none;
+    color: #333; padding: 0; font-size: 14px; }
+  .farbwahl .kreis { width: 52px; height: 52px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 0 2px #cfd8dc; transition: transform .15s; }
+  .farbwahl button.an .kreis { box-shadow: 0 0 0 3px #111; transform: scale(1.1); }
+  .farbwahl button.an { font-weight: bold; }
+
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.12);
+    padding: 9px 22px; font-size: 16px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button.hell { background: #fff; color: var(--h1); border: 2px solid var(--b2); box-shadow: none; }
+  button.weg { background: none; color: #999; box-shadow: none; padding: 4px 10px; font-size: 20px; }
+  button.weg:hover { color: #C62828; }
+  button.gross { font-size: 19px; padding: 12px 28px; }
+
+  .runde { border: 2px solid var(--rand); border-radius: 16px; margin: 12px 0; overflow: hidden; }
+  .rkopf { background: var(--hell); padding: 8px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .rkopf b { font-size: 18px; color: var(--h1); margin-right: auto; }
+  .rkopf label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .rkopf select { width: auto; font-size: 15px; padding: 5px 8px; }
+  .rinhalt { padding: 10px 12px 12px; }
+  .aufgabe { font-size: 14px; color: #555; margin-bottom: 8px; }
+  .zeile { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+  .zeile .gnr { width: 26px; text-align: right; color: #888; font-size: 14px; flex: none; }
+  .zelle { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 4px; }
+  .zelle input { flex: 1 1 0; min-width: 0; }
+  .zelle .bildknopf { flex: none; width: 38px; height: 38px; padding: 0; font-size: 18px; border-radius: 10px;
+    background: #fff; border: 2px solid #cfd8dc; box-shadow: none; color: #333; }
+  .zelle .bildknopf:hover { border-color: var(--b2); }
+  .zelle .bild { flex: 1 1 0; min-width: 0; height: 42px; border: 2px solid #43A047; border-radius: 10px; background: #F4FBF3;
+    display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
+  .zelle .bild img { max-height: 100%; max-width: 100%; border-radius: 6px; }
+  .zelle .bild.leer { border-color: #E53935; }
+  .kopfzeile { display: flex; align-items: center; gap: 6px; margin: 2px 0 4px; }
+  .kopfzeile .gnr, .kopfzeile .verb, .kopfzeile .platz { visibility: hidden; }
+  .kopfzeile .platz { width: 40px; flex: none; }
+  .kopfzeile label { flex: 1 1 0; min-width: 0; font-size: 13px; color: #555; display: flex; align-items: center; gap: 4px; }
+  .kopfzeile select { font-size: 14px; padding: 4px 6px; flex: 1; min-width: 0; }
+  .voll { font-size: 14px; color: #555; margin-top: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .zeile .verb { flex: none; color: #9e8f4e; font-weight: bold; font-size: 18px; width: 16px; text-align: center; }
+  .hinweis { font-size: 14px; border-radius: 10px; padding: 8px 12px; margin-top: 8px; }
+  .hinweis.warn { background: #FFF3E0; color: #8D4A00; }
+  .hinweis.fehl { background: #FFEBEE; color: #B71C1C; }
+  .hilfebox { background: var(--hell); border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+  .hilfebox code { background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 0 5px; font-size: 14px; }
+
+  .knoepfe { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  #meldung { font-weight: bold; font-size: 15px; margin-top: 10px; min-height: 20px; }
+  #meldung.gut { color: #2E7D32; } #meldung.schlecht { color: #C62828; }
+  footer { text-align: right; font-size: 12px; color: #333; margin-top: 6px; }
+
+  #testfenster { position: fixed; inset: 0; z-index: 50; display: none; background: rgba(255,255,255,.5);
+    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); padding: 14px; flex-direction: column; gap: 8px; }
+  #testfenster.zeigen { display: flex; }
+  #testfenster .oben { display: flex; justify-content: flex-end; }
+  #testfenster iframe { flex: 1; width: 100%; border: none; border-radius: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.35); background: #fff; }
+  #kopierfeld { position: fixed; left: -9999px; }
+
+  .korbspalten { display: grid; gap: 12px; }
+  .kspalte { border: 2px solid var(--rand); border-radius: 14px; padding: 8px; background: #fff; min-width: 0; }
+  .kspalte .kname { font-weight: bold; margin-bottom: 8px; }
+  .einst { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 4px; }
+  .einst label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .einst select { width: auto; font-size: 15px; padding: 5px 8px; }
+  .abox { border: 2px solid var(--rand); border-radius: 14px; padding: 8px 10px 10px; margin: 10px 0; background: #fff; }
+  .akopf { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .akopf b { color: var(--h1); margin-right: auto; }
+  .wf { display: flex; gap: 6px; border-radius: 12px; padding: 2px; }
+  .wf.fehlt { box-shadow: 0 0 0 3px #E53935; }
+  .wfk { background: #fff; color: #555; border: 2px solid #cfd8dc; box-shadow: none; padding: 5px 14px; font-size: 15px; border-radius: 10px; }
+  .wfk.falsch.an { background: #FFEBEE; border-color: #D32F2F; color: #C62828; }
+  .wfk.wahr.an { background: #E8F5E9; border-color: #2E7D32; color: #2E7D32; }
+  .arein { display: flex; gap: 6px; align-items: stretch; }
+  .arein textarea { flex: 1; min-height: 52px; }
+  .abild { flex: 0 0 120px; height: 56px; border: 2px solid #43A047; border-radius: 10px; background: #F4FBF3; display: flex; align-items: center; justify-content: center; padding: 2px; }
+  .abild img { max-height: 100%; max-width: 100%; border-radius: 6px; }
+  .arein .bildknopf { flex: none; width: 44px; min-height: 52px; padding: 0; font-size: 18px; border-radius: 10px; background: #fff; border: 2px solid #cfd8dc; box-shadow: none; color: #333; }
+  .arein .bildknopf:hover { border-color: var(--b2); }
+  .textfeld2 { margin-top: 6px; font-size: 15px !important; }
+  .begr .richtig::placeholder { color: #2E7D32; }
+  .begr input { border-left-width: 7px !important; }
+  .begr input.richtig { border-left-color: #2E7D32 !important; }
+  .begr input:not(.richtig) { border-left-color: #E57373 !important; }
+  textarea.kartenfeld { font: inherit; font-size: 16px; padding: 6px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; resize: vertical; min-height: 56px; background: #fff; }
+  textarea.kartenfeld:focus { outline: none; border-color: var(--b2); }
+  textarea.gefuellt { border-color: #43A047; background: #F4FBF3; }
+  textarea.leer { border-color: #E53935; background: #FFF5F5; }
+  textarea.doppelt { border-color: #FB8C00; background: #FFF8EC; }
+  .kspalte .kzeile { display: flex; align-items: center; gap: 4px; margin: 5px 0; }
+  .kspalte .kzeile .zelle { flex: 1; }
+  .kspalte .kkopf { font-size: 13px; color: #555; margin: 0 0 4px; }
+  .rkopf select { width: auto; }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <h1>Wahr-oder-falsch-Generator der Emil-Petri-Schule Arnstadt</h1>
+    <p>Aussagen eintragen und festlegen, ob sie wahr oder falsch sind. Daraus entsteht ein fertiges Spiel für die Schüler.</p>
+  </header>
+
+  <section>
+    <h2><span class="nr">1</span>Aussehen</h2>
+    <label class="f" for="titel">Titel des Spiels</label>
+    <input type="text" id="titel" value="Wahr oder falsch?" style="max-width:480px">
+    <label class="f">Farbe</label>
+    <div class="farbwahl" id="farbwahl"></div>
+  </section>
+
+  <section>
+    <h2><span class="nr">2</span>Runden und Aussagen</h2>
+    <div class="hilfebox">
+      Trage in jedes Feld eine <b>Aussage</b> ein und tippe an, ob sie <b>wahr</b> oder <b>falsch</b> ist. Zu jeder Aussage kann auch ein <b>Bild</b> gehören, zum Beispiel ein Graph.<br>
+      <b>Begründung</b> pro Runde: <i>ohne</i> (nur wahr/falsch), <i>mit Erklärung</i> (wird nach dem Antworten angezeigt) oder <i>Begründung auswählen</i> (die Schüler tippen die richtige von 2 oder 3 Begründungen an – das gibt einen zweiten Punkt).<br>
+      Tipps: <code>3/4</code> wird als Bruch angezeigt, <code>*</code> wird zum Malpunkt. 2 bis 15 Aussagen pro Runde. Im Spiel werden die Aussagen gemischt.
+    </div>
+    <div id="runden"></div>
+    <button class="hell" id="neueRunde">＋ Weitere Runde</button>
+  </section>
+
+  <section>
+    <h2><span class="nr">3</span>Erstellt von</h2>
+    <label class="f" for="name">Dein Name</label>
+    <input type="text" id="name" placeholder="z. B. Max Mustermann" style="max-width:480px">
+  </section>
+
+  <section>
+    <h2><span class="nr">4</span>Spiel erstellen</h2>
+    <div class="knoepfe">
+      <button class="gross" id="testen">▶ Spiel testen</button>
+      <button class="gross" id="laden">⬇ Spiel herunterladen</button>
+      <button class="hell" id="oeffnen">📂 Gespeichertes Spiel bearbeiten</button>
+      <input type="file" id="datei" accept=".html,.htm" style="display:none">
+      <input type="file" id="bilddatei" accept="image/*" style="display:none">
+    </div>
+    <div id="meldung"></div>
+    <button class="hell" id="kopieren" style="display:none; margin-top:8px">📋 Stattdessen HTML kopieren</button>
+    <div class="hilfebox" style="margin-top:10px">
+      „Spiel herunterladen“ speichert das fertige Spiel sofort als HTML-Datei, auf dem iPad in der App „Dateien“, am PC im Ordner „Downloads“.
+      Die Datei kann man per Doppelklick im Browser öffnen, verschicken oder bei GitHub Pages hochladen. Um ein Spiel später zu ändern, öffne die Datei hier mit „Gespeichertes Spiel bearbeiten“.
+    </div>
+  </section>
+
+  <footer>Erstellt von Marion Klugmann (November 2026) mit freundlicher Unterstützung von Claude.</footer>
+</div>
+
+<div id="testfenster">
+  <div class="oben"><button id="testZu">✕ Test schließen</button></div>
+  <iframe id="testframe" title="Spiel testen"></iframe>
+</div>
+<textarea id="kopierfeld"></textarea>
+
+<script type="text/plain" id="vorlage-wf"><!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wahr oder falsch?</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; overflow: hidden;
+    height: 100vh; height: 100dvh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%); position: relative; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; height: 100%; max-width: 1400px; margin: 0 auto; padding: 12px 14px 8px;
+    display: flex; flex-direction: column; gap: 8px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 55%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 8px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  .titel { flex: 1 1 260px; position: relative; }
+  .titel .schule { font-size: 12px; opacity: .85; letter-spacing: .5px; position: absolute; left: 0; bottom: 100%; margin-bottom: 1px; white-space: nowrap; }
+  .titel h1 { margin: 0; font-size: clamp(18px, 2.3vw, 26px); }
+  header.mitschule { padding-top: 20px; padding-bottom: 12px; }
+  .chips { display: flex; gap: 6px; align-items: center; }
+  .chip { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.45); font-size: 16px; }
+  .chip.aktiv { background: #fff; color: var(--h1); border-color: #fff; transform: scale(1.12); }
+  .chip.fertig { background: #FFD54F; color: #5D4037; border-color: #FFD54F; }
+  .uhr { background: rgba(0,0,0,.22); border-radius: 999px; padding: 6px 14px; font-size: 20px; font-weight: bold;
+    font-variant-numeric: tabular-nums; min-width: 104px; text-align: center; }
+
+  .leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .info { font-size: 17px; flex: 1 1 300px; }
+  #feedback { font-size: 16px; font-weight: bold; min-height: 20px; }
+  #feedback.gut { color: #2E7D32; } #feedback.schlecht { color: #C62828; }
+  .stand { display: flex; gap: 8px; font-size: 15px; }
+  .pill { background: #fff; border: 2px solid #ddd; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
+  .pill b.rot { color: #C62828; }
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.15);
+    padding: 9px 26px; font-size: 18px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.hilfe { width: 38px; height: 38px; padding: 0; font-size: 20px; flex: none; background: rgba(255,255,255,.18);
+    border: 2px solid rgba(255,255,255,.55); box-shadow: none; }
+
+  #board { flex: 1; min-height: 0; position: relative; border-radius: 18px; overflow: hidden;
+    border: 2px solid var(--rand); box-shadow: inset 0 2px 10px rgba(0,0,0,.06);
+    background-color: #fffdf7;
+    background-image: radial-gradient(#dcdcd4 1.2px, transparent 1.2px); background-size: 24px 24px; }
+
+  footer { text-align: right; font-size: 12px; color: #333; min-height: 2px; }
+
+  #overlay, #intro { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 50;
+    background: rgba(255,255,255,.5); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+  #overlay.zeigen, #intro.zeigen { display: flex; }
+  .modal { background: #fff; border-radius: 22px; padding: 22px 30px 24px; min-width: 300px; max-width: 92vw; text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,.3); border-top: 8px solid var(--b2); animation: rein .45s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes rein { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h2 { margin: 0 0 10px; font-size: 28px; color: var(--h1); }
+  .modal .zeile { font-size: 20px; margin: 6px 0; }
+  .modal .gross { font-size: 24px; font-weight: bold; margin: 12px 0 4px; }
+  .modal .stern { color: #F9A825; }
+  .modal button { margin-top: 14px; }
+  .anleitung { width: 620px; max-height: 92vh; overflow: auto; text-align: left; }
+  .anleitung h2 { text-align: center; }
+  .schritt { display: flex; gap: 14px; align-items: flex-start; padding: 10px 12px; margin: 8px 0; border-radius: 14px; background: var(--hell); font-size: 18px; line-height: 1.35; }
+  .schritt .nr { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--b2); color: #fff; font-weight: bold;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .demo { display: flex; justify-content: center; align-items: center; margin: 4px 0 10px; position: relative; }
+  .demo .dk { width: 92px; height: 58px; border: 2px solid #37474F; border-radius: 10px; background: #fff; font-weight: bold; font-size: 20px;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 #cfd8dc; }
+  .demo .dt { position: absolute; width: 34px; height: 30px; transform: rotate(-10deg); background: rgba(245,232,180,.92);
+    display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .farbe { display: inline-block; padding: 0 7px; border-radius: 5px; color: #fff; font-weight: bold; }
+  .anleitung .knopf { text-align: center; }
+  .anleitung button { font-size: 22px; padding: 11px 40px; }
+  #konfetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
+  .frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; font-size: .85em; vertical-align: middle; }
+  .frac > span:first-child { border-bottom: 2px solid #111; padding: 0 3px 1px; }
+  .frac > span:last-child { padding: 1px 3px 0; }
+  #board { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 2vw, 28px); padding: 14px; }
+  .seite { flex: none; width: clamp(90px, 13vw, 170px); height: min(62%, 320px); border-radius: 22px; border: 4px dashed; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px; font-weight: bold; font-size: clamp(18px, 2.2vw, 28px); cursor: pointer; user-select: none;
+    transition: background .2s, transform .15s; background: rgba(255,255,255,.75); }
+  .seite .sym { font-size: clamp(34px, 5vw, 64px); line-height: 1; }
+  .seite.falsch { border-color: #E57373; color: #C62828; }
+  .seite.wahr { border-color: #81C784; color: #2E7D32; }
+  .seite.falsch.an { background: #FFEBEE; border-style: solid; transform: scale(1.05); }
+  .seite.wahr.an { background: #E8F5E9; border-style: solid; transform: scale(1.05); }
+  .seite.aus { opacity: .35; pointer-events: none; }
+  .mitte { flex: 1 1 auto; max-width: 760px; max-height: 100%; display: flex; flex-direction: column; justify-content: safe center; gap: 12px; min-width: 0; overflow-y: auto; overflow-x: visible; padding: 6px 4px; }
+  .karte { background: #fff; border: 3px solid #37474F; border-radius: 22px; padding: clamp(14px, 2.4vw, 28px); box-shadow: 0 6px 0 #cfd8dc, 0 12px 24px rgba(0,0,0,.12);
+    touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; position: relative; text-align: center; transition: border-color .2s, background .2s;
+    display: flex; flex-direction: column; align-items: center; gap: 12px; flex: none; }
+  .karte.zieht { transition: none; cursor: grabbing; }
+  .karte.zurueck { transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
+  .karte.weg { transition: transform .35s ease-in, opacity .35s; opacity: 0; }
+  .karte .nr { position: absolute; left: 14px; top: 10px; font-size: 13px; font-weight: bold; color: #888; }
+  .karte img { max-width: 100%; max-height: 26vh; object-fit: contain; border-radius: 12px; pointer-events: none; -webkit-user-drag: none; }
+  .karte .satz { font-size: clamp(20px, 2.6vw, 32px); font-weight: bold; line-height: 1.3; white-space: pre-line; }
+  .karte.beantwortet img { max-height: 13vh; }
+  .karte.beantwortet .satz { font-size: clamp(17px, 2vw, 24px); }
+  .karte.beantwortet { padding: 10px 16px; gap: 6px; }
+  .karte.ok { border-color: #2E7D32; background: #F1F8E9; }
+  .karte.bad { border-color: #D32F2F; background: #FFEBEE; animation: shake .4s; }
+  .zeitleiste { height: 10px; border-radius: 5px; background: #eceff1; overflow: hidden; width: 100%; }
+  .zeitleiste div { height: 100%; background: linear-gradient(90deg, #FFB300, #F4511E); width: 100%; }
+  .rueck { background: #fff; border-radius: 18px; padding: 14px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.1); font-size: clamp(16px, 1.8vw, 21px); line-height: 1.4; }
+  .rueck .kopf { font-weight: bold; font-size: 1.1em; margin-bottom: 6px; }
+  .rueck .kopf.gut { color: #2E7D32; } .rueck .kopf.schlecht { color: #C62828; }
+  .rueck .erkl { color: #333; }
+  .wahl { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .wahl button { text-align: left; background: #fff; color: #111; border: 2px solid #90A4AE; box-shadow: 0 3px 0 #cfd8dc; font-size: clamp(15px, 1.7vw, 19px); padding: 10px 16px; border-radius: 14px; }
+  .wahl button.ok { border-color: #2E7D32; background: #E8F5E9; color: #1B5E20; }
+  .wahl button.bad { border-color: #D32F2F; background: #FFEBEE; color: #B71C1C; }
+  .wahl button:disabled { opacity: 1; }
+  .weiterknopf { align-self: center; }
+  @keyframes shake { 0%,100% { translate: 0; } 25% { translate: -8px; } 50% { translate: 8px; } 75% { translate: -5px; } }
+  @media (max-width: 700px) {
+    #board { flex-direction: column; }
+    .seite { width: 100%; height: 56px; flex-direction: row; order: 2; } .seite .sym { font-size: 28px; }
+    .mitte { order: 1; height: auto; flex: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <div class="titel" id="titelbox">
+      <div class="schule" id="schule"></div>
+      <h1 id="titel">Wahr oder falsch?</h1>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="uhr" id="uhr">⏱ 00:00</div>
+    <button class="hilfe" id="hilfe" title="Anleitung">?</button>
+  </header>
+  <div class="leiste">
+    <div class="info" id="info"></div>
+    <div id="feedback"></div>
+    <div class="stand" id="stand"></div>
+  </div>
+  <div id="board">
+    <div class="seite falsch" id="sFalsch"><span class="sym">✘</span>falsch</div>
+    <div class="mitte" id="mitte"></div>
+    <div class="seite wahr" id="sWahr"><span class="sym">✔</span>wahr</div>
+  </div>
+  <footer id="fuss"></footer>
+</div>
+<div id="overlay"><div class="modal" id="modal"></div></div>
+<div id="intro" class="zeigen"><div class="modal anleitung">
+  <h2>So funktioniert „Wahr oder falsch?“</h2>
+  <div class="schritt"><div class="nr">1</div><div><b>Entscheiden:</b> Lies die Aussage. Ziehe die Karte nach <b style="color:#2E7D32">rechts zu „wahr“</b> oder nach <b style="color:#C62828">links zu „falsch“</b>. Du kannst auch einfach auf „wahr“ oder „falsch“ tippen.</div></div>
+  <div class="schritt" id="schrittWahl" style="display:none"><div class="nr">2</div><div><b>Begründen:</b> Danach wählst du die richtige Begründung aus. Auch dafür gibt es einen Punkt.</div></div>
+  <div class="schritt" id="schrittErkl" style="display:none"><div class="nr">2</div><div><b>Nachlesen:</b> Nach deiner Antwort siehst du eine kurze Erklärung. Tippe dann auf „Weiter“.</div></div>
+  <div class="schritt" id="schrittWdh" style="display:none"><div class="nr">↻</div><div><b>Noch einmal:</b> Aussagen, die du falsch beantwortest, kommen am Ende noch einmal dran.</div></div>
+  <div class="schritt" id="schrittBlitz" style="display:none"><div class="nr">⚡</div><div><b>Blitzrunde:</b> <span id="blitzText">Für jede Aussage hast du nur wenige Sekunden.</span> Ist die Zeit um, zählt es als Fehler.</div></div>
+  <div class="schritt"><div class="nr">★</div><div><b>Ziel:</b> <span id="zielsatz">Beantworte alle Aussagen richtig.</span> Versuche, ohne Fehler durchzukommen!</div></div>
+  <div class="knopf"><button id="losgehts">Los geht's! ➜</button></div>
+</div></div>
+<canvas id="konfetti"></canvas>
+
+<script type="application/json" id="spieldaten">/*__DATEN__*/<\/script>
+<script>
+const FARBEN = {
+  tuerkis: { r: ['#00585C', '#00897B', '#26C6DA', '#84E3EC'], h: ['#00616A', '#00838F', '#1FB5C6'], b: ['#26B5A6', '#00897B', '#00695C'], hell: '#EAF8F8', rand: '#C5E8EA' },
+  rot:     { r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' }
+};
+function ladeDaten(ersatz) {
+  try { const d = JSON.parse(document.getElementById('spieldaten').textContent); if (d) return d; } catch (e) {}
+  return ersatz;
+}
+function basisEinrichten(D) {
+  const f = FARBEN[D.farbe] || FARBEN.rot, s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c));
+  f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c));
+  s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand);
+  document.title = D.titel || document.title;
+  document.getElementById('titel').textContent = D.titel || document.title;
+  document.getElementById('schule').textContent = D.schule || '';
+  if (D.schule) document.querySelector('header').classList.add('mitschule');
+  if (D.name) document.getElementById('fuss').textContent =
+    'Erstellt von ' + D.name + (D.monat ? ' (' + D.monat + ')' : '') + (D.ki ? ' mit freundlicher Unterstützung von ' + D.ki : '') + '.';
+  const intro = document.getElementById('intro');
+  document.getElementById('losgehts').onclick = () => intro.classList.remove('zeigen');
+  document.getElementById('hilfe').onclick = () => intro.classList.add('zeigen');
+  const b = document.getElementById('blasen');
+  for (let i = 0; i < 26; i++) {
+    const sp = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    sp.style.width = sp.style.height = d + 'px';
+    sp.style.left = (Math.random() * 100) + '%';
+    sp.style.animationDuration = (14 + Math.random() * 18) + 's';
+    sp.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(sp);
+  }
+}
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function fmt(t) {
+  let h = esc(String(t).trim());
+  h = h.replace(/(\d+(?:,\d+)?)\s*\/\s*(\d+(?:,\d+)?)/g, '<span class="frac"><span>$1</span><span>$2</span></span>');
+  h = h.replace(/\s*\*\s*/g, '&nbsp;·&nbsp;');
+  h = h.replace(/(\d) (%|‰)/g, '$1&#8239;$2');
+  return h;
+}
+function laenge(t) { if (t && typeof t === 'object') return 0; return String(t).replace(/\d+\s*\/\s*\d+/g, 'xx').replace(/\s+/g, ' ').trim().length; }
+const istBild = t => t && typeof t === 'object' && t.bild;
+function karteHTML(t) { return istBild(t) ? `<img src="${t.bild}" alt="">` : fmt(t); }
+function sprechText(t) { return istBild(t) ? '' : String(t).replace(/\*/g, ' mal ').trim(); }
+const mmss = ms => { const s = Math.floor(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+
+function vorlesen(text, sprache, el) {
+  if (!text || !sprache || !('speechSynthesis' in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = sprache; u.rate = .9;
+    const st = speechSynthesis.getVoices().filter(v => v.lang.replace('_', '-').toLowerCase().startsWith(sprache.slice(0, 2).toLowerCase()));
+    const genau = st.find(v => v.lang.replace('_', '-').toLowerCase() === sprache.toLowerCase());
+    if (genau || st[0]) u.voice = genau || st[0];
+    if (el) { el.classList.add('redet'); u.onend = u.onerror = () => el.classList.remove('redet'); setTimeout(() => el.classList.remove('redet'), 4000); }
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+if ('speechSynthesis' in window) { try { speechSynthesis.getVoices(); } catch (e) {} }
+
+function konfetti() {
+  const cv = document.getElementById('konfetti'), cx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const farben = ['#FFD54F', '#4FC3F7', '#81C784', '#F06292', '#BA68C8', '#FF8A65'];
+  const teile = Array.from({ length: 140 }, () => ({
+    x: innerWidth / 2 + (Math.random() - .5) * 200, y: innerHeight * .4,
+    vx: (Math.random() - .5) * 16, vy: -Math.random() * 14 - 4, r: Math.random() * 6 + 4,
+    f: farben[Math.floor(Math.random() * farben.length)], a: Math.random() * 6, va: (Math.random() - .5) * .3 }));
+  let n = 0;
+  (function schritt() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    teile.forEach(t => {
+      t.vy += .35; t.x += t.vx; t.y += t.vy; t.vx *= .99; t.a += t.va;
+      cx.save(); cx.translate(t.x, t.y); cx.rotate(t.a); cx.fillStyle = t.f;
+      cx.fillRect(-t.r, -t.r / 2, t.r * 2, t.r); cx.restore();
+    });
+    if (++n < 160) requestAnimationFrame(schritt); else cx.clearRect(0, 0, cv.width, cv.height);
+  })();
+}
+function zeigeModal(html, knoepfe) {
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('overlay').classList.add('zeigen');
+  konfetti();
+  Object.entries(knoepfe || {}).forEach(([id, fn]) => { const b = document.getElementById(id); if (b) b.onclick = fn; });
+}
+
+const D = ladeDaten({ titel: 'Wahr oder falsch?', schule: '', farbe: 'blau', name: '', runden: [
+  { anweisung: '', begruendung: 'auswahl', wiederholen: true, blitz: 0, aussagen: [
+    { text: 'Der Graph von y = 2x ist eine Gerade durch den Ursprung.', wahr: true, erklaerung: 'Bei y = m * x gibt es kein b, also geht die Gerade durch (0|0).', falsch1: 'Weil 2 eine gerade Zahl ist.', falsch2: '' },
+    { text: 'Der Graph von y = 2x + 1 ist proportional.', wahr: false, erklaerung: 'Er geht nicht durch den Ursprung.', falsch1: 'Er steigt nicht.', falsch2: 'Er ist keine Gerade.' },
+    { text: '1/4 = 25 %', wahr: true, erklaerung: '1 : 4 = 0,25 = 25 %', falsch1: '1/4 ist kleiner als 25 %.', falsch2: '' }] }] });
+basisEinrichten(D);
+const RUNDEN = D.runden;
+const hat = f => RUNDEN.some(f);
+if (hat(r => r.begruendung === 'auswahl')) document.getElementById('schrittWahl').style.display = 'flex';
+else if (hat(r => r.begruendung === 'erklaerung')) document.getElementById('schrittErkl').style.display = 'flex';
+if (hat(r => r.wiederholen)) document.getElementById('schrittWdh').style.display = 'flex';
+if (hat(r => r.blitz > 0)) {
+  document.getElementById('schrittBlitz').style.display = 'flex';
+  const z = [...new Set(RUNDEN.filter(r => r.blitz > 0).map(r => r.blitz))];
+  if (z.length === 1) document.getElementById('blitzText').textContent = `Für jede Aussage hast du nur ${z[0]} Sekunden.`;
+}
+if (RUNDEN.length > 1) document.getElementById('zielsatz').textContent = `Beantworte alle Aussagen richtig, in ${RUNDEN.length} Runden.`;
+
+const mitte = document.getElementById('mitte'), fb = document.getElementById('feedback');
+const sFalsch = document.getElementById('sFalsch'), sWahr = document.getElementById('sWahr');
+let runde = 0, schlange = [], aktuell = null, fehler = 0, punkte = [], erledigt = 0, t0 = null, tEnde = null, phase = 'warten', blitzTimer = null;
+
+setInterval(() => { document.getElementById('uhr').textContent = '⏱ ' + mmss(t0 ? (tEnde || Date.now()) - t0 : 0); }, 250);
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const maxPunkte = R => R.aussagen.length * (R.begruendung === 'auswahl' ? 2 : 1);
+const satzHTML = t => esc(String(t || '').trim()).replace(/(\d+(?:,\d+)?)\s*\/\s*(\d+(?:,\d+)?)/g, '<span class="frac"><span>$1</span><span>$2</span></span>').replace(/\s*\*\s*/g, ' · ').replace(/(\d) (%|‰)/g, '$1&#8239;$2');
+
+function starteRunde(r) {
+  runde = r; fehler = 0; erledigt = 0;
+  document.getElementById('overlay').classList.remove('zeigen');
+  fb.textContent = ''; fb.className = '';
+  const R = RUNDEN[r];
+  schlange = shuffle(R.aussagen.map((a, i) => i));
+  document.getElementById('info').innerHTML = `<b>Runde ${r + 1}:</b> ${esc(R.anweisung || 'Ist die Aussage wahr oder falsch?')}${R.blitz ? ` <b style="color:#F4511E">⚡ ${R.blitz} s pro Aussage</b>` : ''}`;
+  document.getElementById('chips').innerHTML = RUNDEN.map((_, i) =>
+    `<div class="chip ${i < r ? 'fertig' : ''} ${i === r ? 'aktiv' : ''}">${i < r ? '✓' : i + 1}</div>`).join('');
+  naechste();
+}
+function zeigeStand() {
+  const R = RUNDEN[runde];
+  let h = `<span class="pill">Aussage <b>${Math.min(erledigt + 1, R.aussagen.length)}/${R.aussagen.length}</b></span><span class="pill">Fehler: <b class="rot">${fehler}</b></span>`;
+  if (runde > 0) {
+    const p = punkte.slice(0, runde).reduce((a, b) => a + b, 0);
+    let m = 0; for (let i = 0; i < runde; i++) m += maxPunkte(RUNDEN[i]);
+    h = `<span class="pill">bisher: <b>${p}/${m}</b></span>` + h;
+  }
+  document.getElementById('stand').innerHTML = h;
+}
+
+function naechste() {
+  clearInterval(blitzTimer);
+  sFalsch.classList.remove('an', 'aus'); sWahr.classList.remove('an', 'aus');
+  fb.textContent = ''; fb.className = '';
+  if (!schlange.length) return fertig();
+  aktuell = schlange.shift();
+  const R = RUNDEN[runde], A = R.aussagen[aktuell];
+  phase = 'entscheiden';
+  mitte.innerHTML = `<div class="karte" id="karte"><span class="nr">${erledigt + 1}/${R.aussagen.length}</span>
+      ${A.bild ? `<img src="${A.bild}" alt="">` : ''}${A.text ? `<div class="satz">${satzHTML(A.text)}</div>` : ''}
+      ${R.blitz ? '<div class="zeitleiste"><div id="zeit"></div></div>' : ''}</div>`;
+  zeigeStand();
+  const karte = document.getElementById('karte');
+  karte.addEventListener('pointerdown', kDown);
+  starteBlitz();
+}
+function starteBlitz() {
+  clearInterval(blitzTimer);
+  const R = RUNDEN[runde];
+  if (R.blitz && phase === 'entscheiden') {
+    const ende = Date.now() + R.blitz * 1000, bar = document.getElementById('zeit');
+    blitzTimer = setInterval(() => {
+      const rest = ende - Date.now();
+      if (bar) bar.style.width = Math.max(0, rest / (R.blitz * 1000) * 100) + '%';
+      if (rest <= 0) { clearInterval(blitzTimer); antwort(null); }
+    }, 50);
+  }
+}
+
+/* Karte ziehen */
+let zug = null;
+function kDown(e) {
+  if (phase !== 'entscheiden') return;
+  if (!t0) t0 = Date.now();
+  const k = e.currentTarget;
+  zug = { k, sx: e.clientX, dx: 0 };
+  k.classList.add('zieht');
+  try { k.setPointerCapture(e.pointerId); } catch (x) {}
+  k.addEventListener('pointermove', kMove); k.addEventListener('pointerup', kUp); k.addEventListener('pointercancel', kUp);
+}
+function kMove(e) {
+  if (!zug) return;
+  zug.dx = e.clientX - zug.sx;
+  zug.k.style.transform = `translateX(${zug.dx}px) rotate(${zug.dx / 18}deg)`;
+  sWahr.classList.toggle('an', zug.dx > 60); sFalsch.classList.toggle('an', zug.dx < -60);
+}
+function kUp() {
+  if (!zug) return;
+  const { k, dx } = zug; zug = null;
+  k.removeEventListener('pointermove', kMove); k.removeEventListener('pointerup', kUp); k.removeEventListener('pointercancel', kUp);
+  k.classList.remove('zieht');
+  if (Math.abs(dx) > 100) { k.classList.add('zurueck'); k.style.transform = ''; antwort(dx > 0); return; }
+  sWahr.classList.remove('an'); sFalsch.classList.remove('an');
+  k.classList.add('zurueck'); k.style.transform = ''; setTimeout(() => k.classList.remove('zurueck'), 380);
+}
+sWahr.addEventListener('click', () => { if (phase === 'entscheiden') { if (!t0) t0 = Date.now(); antwort(true); } });
+sFalsch.addEventListener('click', () => { if (phase === 'entscheiden') { if (!t0) t0 = Date.now(); antwort(false); } });
+
+function antwort(wert) {
+  if (phase !== 'entscheiden') return;
+  clearInterval(blitzTimer);
+  phase = 'rueckmeldung';
+  const R = RUNDEN[runde], A = R.aussagen[aktuell], richtig = wert === !!A.wahr;
+  const karte = document.getElementById('karte');
+  karte.classList.add(richtig ? 'ok' : 'bad', 'beantwortet');
+  (A.wahr ? sWahr : sFalsch).classList.add('an');
+  (A.wahr ? sFalsch : sWahr).classList.add('aus');
+  if (!richtig) fehler++;
+  let falschGemacht = !richtig;
+  const kopf = wert === null ? `⏱ Zeit abgelaufen! Die Aussage ist <b>${A.wahr ? 'wahr' : 'falsch'}</b>.`
+    : richtig ? `Richtig! Die Aussage ist ${A.wahr ? 'wahr' : 'falsch'}.` : `Leider nicht. Die Aussage ist ${A.wahr ? 'wahr' : 'falsch'}.`;
+  zeigeStand();
+  const rueck = document.createElement('div'); rueck.className = 'rueck';
+  rueck.innerHTML = `<div class="kopf ${richtig ? 'gut' : 'schlecht'}">${kopf}</div>`;
+  const abschluss = () => {
+    if (falschGemacht && R.wiederholen) schlange.push(aktuell); else erledigt++;
+    if (!falschGemacht || !R.wiederholen) { /* fertig mit dieser Aussage */ }
+  };
+  const weiterKnopf = () => {
+    const b = document.createElement('button'); b.className = 'weiterknopf'; b.textContent = schlange.length || (falschGemacht && R.wiederholen) ? 'Weiter ➜' : 'Fertig ➜';
+    b.onclick = () => { abschluss(); naechste(); };
+    mitte.appendChild(b); b.focus(); mitte.scrollTop = mitte.scrollHeight;
+  };
+  if (R.begruendung === 'auswahl' && A.erklaerung) {
+    rueck.innerHTML += `<div>Warum? Wähle die richtige Begründung:</div>`;
+    const opts = shuffle([{ t: A.erklaerung, ok: true }, { t: A.falsch1, ok: false }, { t: A.falsch2, ok: false }].filter(o => o.t && String(o.t).trim()));
+    const wahl = document.createElement('div'); wahl.className = 'wahl';
+    opts.forEach(o => {
+      const b = document.createElement('button'); b.innerHTML = satzHTML(o.t);
+      b.onclick = () => {
+        wahl.querySelectorAll('button').forEach((x, i) => { x.disabled = true; if (opts[i].ok) x.classList.add('ok'); });
+        if (!o.ok) { b.classList.add('bad'); fehler++; falschGemacht = true; zeigeStand(); }
+        weiterKnopf();
+      };
+      wahl.appendChild(b);
+    });
+    rueck.appendChild(wahl);
+    mitte.appendChild(rueck); mitte.scrollTop = mitte.scrollHeight;
+  } else if ((R.begruendung === 'erklaerung' || R.begruendung === 'auswahl') && A.erklaerung) {
+    rueck.innerHTML += `<div class="erkl">${satzHTML(A.erklaerung)}</div>`;
+    mitte.appendChild(rueck); weiterKnopf();
+  } else {
+    mitte.appendChild(rueck);
+    setTimeout(() => { abschluss(); naechste(); }, richtig ? 1100 : 2000);
+  }
+}
+
+function fertig() {
+  phase = 'ende';
+  const R = RUNDEN[runde], max = maxPunkte(R), p = Math.max(0, max - fehler);
+  punkte[runde] = p;
+  mitte.innerHTML = '';
+  fb.className = 'gut'; fb.textContent = 'Alle Aussagen geschafft!';
+  const stern = p === max ? ' <span class="stern">★ fehlerfrei</span>' : '';
+  if (runde < RUNDEN.length - 1) {
+    setTimeout(() => zeigeModal(`<h2>Runde ${runde + 1} geschafft!</h2><div class="gross">${p}/${max} richtig${stern}</div>
+      <button id="weiter">Nächste Runde ➜</button>`, { weiter: () => starteRunde(runde + 1) }), 300);
+  } else {
+    tEnde = Date.now();
+    const ges = punkte.reduce((a, b) => a + b, 0);
+    let gmax = 0; RUNDEN.forEach(X => gmax += maxPunkte(X));
+    setTimeout(() => zeigeModal(`<h2>Geschafft! 🎉</h2>
+      ${RUNDEN.length > 1 ? punkte.map((q, i) => { const m = maxPunkte(RUNDEN[i]);
+        return `<div class="zeile">Runde ${i + 1}: <b>${q}/${m}</b> richtig${q === m ? ' <span class="stern">★</span>' : ''}</div>`; }).join('') : ''}
+      <div class="gross">Gesamt: ${ges}/${gmax} richtig${ges === gmax ? ' <span class="stern">★</span>' : ''}</div>
+      <div class="gross">⏱ Zeit: ${mmss(tEnde - t0)}</div>
+      <button id="nochmal">Nochmal spielen</button>`,
+      { nochmal: () => { punkte = []; t0 = null; tEnde = null; starteRunde(0); } }), 300);
+  }
+}
+/* Blitzrunde startet erst, wenn die Anleitung geschlossen ist */
+let gestartet = false;
+document.getElementById('losgehts').addEventListener('click', () => {
+  if (!gestartet) { gestartet = true; t0 = Date.now(); starteRunde(0); } else starteBlitz();
+});
+document.getElementById('hilfe').addEventListener('click', () => clearInterval(blitzTimer));
+<\/script>
+</body>
+</html>
+</script>
+<script>
+const FARBEN = {
+  rot:     { name: 'Rot',    r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { name: 'Grün',   r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { name: 'Blau',   r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { name: 'Pink',   r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' },
+};
+const SPRACHEN = [['', 'nicht vorlesen'], ['de-DE', 'Deutsch'], ['en-GB', 'Englisch'], ['fr-FR', 'Französisch']];
+const MAXA = 15, MINA = 2;
+const MONATE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+const SCHULE = 'Emil-Petri-Schule Arnstadt';
+const $ = id => document.getElementById(id);
+const leereAussage = () => ({ text: '', bild: '', wahr: null, erklaerung: '', falsch1: '', falsch2: '' });
+const leereRunde = () => ({ anweisung: '', begruendung: 'ohne', wiederholen: true, blitz: 0, aussagen: [leereAussage(), leereAussage(), leereAussage()] });
+let D = { titel: 'Wahr oder falsch?', farbe: 'rot', name: '', runden: [leereRunde()] };
+
+function farbeSetzen(k) {
+  D.farbe = k;
+  const f = FARBEN[k], s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c));
+  f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c));
+  s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand);
+  document.querySelectorAll('#farbwahl button').forEach(b => b.classList.toggle('an', b.dataset.k === k));
+}
+$('farbwahl').innerHTML = Object.entries(FARBEN).map(([k, f]) =>
+  `<button type="button" data-k="${k}"><span class="kreis" style="background:linear-gradient(135deg,${f.r[1]},${f.r[2]})"></span>${f.name}</button>`).join('');
+$('farbwahl').addEventListener('click', e => { const b = e.target.closest('button'); if (b) farbeSetzen(b.dataset.k); });
+
+function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+const istBild = t => t && typeof t === 'object' && t.bild;
+
+function aussageHTML(r, ri, A, ci) {
+  const d = `data-r="${ri}" data-c="${ci}"`;
+  return `<div class="abox" ${d}>
+    <div class="akopf"><b>Aussage ${ci + 1}</b>
+      <span class="wf">
+        <button type="button" class="wfk falsch ${A.wahr === false ? 'an' : ''}" data-akt="setz" data-w="0" ${d}>✘ falsch</button>
+        <button type="button" class="wfk wahr ${A.wahr === true ? 'an' : ''}" data-akt="setz" data-w="1" ${d}>✔ wahr</button>
+      </span>
+      <button class="weg" data-akt="karteWeg" ${d} title="Aussage löschen">✕</button></div>
+    <div class="arein">
+      <textarea class="kartenfeld afeld" data-feld="text" ${d} rows="2" placeholder="Aussage, z. B. Der Graph von y = 2x + 1 ist proportional.">${esc(A.text)}</textarea>
+      ${A.bild ? `<div class="bild abild"><img src="${A.bild}" alt=""></div><button class="bildknopf" data-akt="bildWeg" ${d} title="Bild entfernen">✕</button>`
+               : `<button class="bildknopf" data-akt="bild" ${d} title="Bild hinzufügen">🖼</button>`}
+    </div>
+    ${r.begruendung === 'erklaerung' ? `<input type="text" class="textfeld2" data-feld="erklaerung" ${d} value="${esc(A.erklaerung)}" placeholder="Erklärung (kann leer bleiben), z. B. Er geht nicht durch den Ursprung.">` : ''}
+    ${r.begruendung === 'auswahl' ? `<div class="begr">
+        <input type="text" class="textfeld2 pflicht richtig" data-feld="erklaerung" ${d} value="${esc(A.erklaerung)}" placeholder="✔ richtige Begründung">
+        <input type="text" class="textfeld2 pflicht" data-feld="falsch1" ${d} value="${esc(A.falsch1)}" placeholder="✘ falsche Begründung 1">
+        <input type="text" class="textfeld2" data-feld="falsch2" ${d} value="${esc(A.falsch2)}" placeholder="✘ falsche Begründung 2 (kann leer bleiben)">
+      </div>` : ''}
+  </div>`;
+}
+function zeichneRunden() {
+  $('runden').innerHTML = D.runden.map((r, ri) => {
+    const n = r.aussagen.length;
+    return `
+    <div class="runde" data-r="${ri}">
+      <div class="rkopf">
+        <b>Runde ${ri + 1}</b>
+        ${D.runden.length > 1 ? `<button class="weg" data-akt="rundeWeg" data-r="${ri}" title="Runde löschen">🗑</button>` : ''}
+      </div>
+      <div class="rinhalt">
+        <div class="einst">
+          <label>Begründung:
+            <select data-feld="begruendung" data-r="${ri}">
+              <option value="ohne" ${r.begruendung === 'ohne' ? 'selected' : ''}>ohne</option>
+              <option value="erklaerung" ${r.begruendung === 'erklaerung' ? 'selected' : ''}>mit Erklärung</option>
+              <option value="auswahl" ${r.begruendung === 'auswahl' ? 'selected' : ''}>Begründung auswählen</option></select></label>
+          <label>Falsch beantwortet:
+            <select data-feld="wiederholen" data-r="${ri}">
+              <option value="1" ${r.wiederholen ? 'selected' : ''}>am Ende wiederholen</option>
+              <option value="0" ${!r.wiederholen ? 'selected' : ''}>nicht wiederholen</option></select></label>
+          <label>Blitzrunde:
+            <select data-feld="blitz" data-r="${ri}">${[0, 5, 10, 15, 20, 30].map(z => `<option value="${z}" ${+r.blitz === z ? 'selected' : ''}>${z ? z + ' Sekunden pro Aussage' : 'aus'}</option>`).join('')}</select></label>
+        </div>
+        <label class="f">Arbeitsauftrag <span class="klein">(steht im Spiel oben, kann leer bleiben)</span></label>
+        <input type="text" class="textfeld" data-feld="anweisung" data-r="${ri}" value="${esc(r.anweisung)}" placeholder="z. B. Entscheide: Ist die Aussage wahr oder falsch?">
+        ${r.aussagen.map((A, ci) => aussageHTML(r, ri, A, ci)).join('')}
+        ${n < MAXA ? `<button class="hell" data-akt="karteNeu" data-r="${ri}" style="margin-top:6px">＋ Aussage</button>
+           <span class="klein" style="margin-left:8px">noch ${MAXA - n} möglich</span>`
+          : `<div class="voll">Mehr Aussagen passen nicht in eine Runde (höchstens ${MAXA}). Weiter geht es mit „＋ Weitere Runde“.</div>`}
+        <div class="meld"></div>
+      </div>
+    </div>`; }).join('');
+  pruefeEingaben(false);
+}
+
+$('runden').addEventListener('input', e => {
+  const x = e.target, r = D.runden[+x.dataset.r]; if (!r || !x.dataset.feld || x.tagName === 'SELECT') return;
+  if (x.dataset.c !== undefined) r.aussagen[+x.dataset.c][x.dataset.feld] = x.value; else r[x.dataset.feld] = x.value;
+  pruefeEingaben(false);
+});
+$('runden').addEventListener('change', e => {
+  const x = e.target; if (x.tagName !== 'SELECT') return;
+  const r = D.runden[+x.dataset.r], f = x.dataset.feld;
+  r[f] = f === 'wiederholen' ? x.value === '1' : f === 'blitz' ? +x.value : x.value;
+  zeichneRunden();
+});
+
+let bildZiel = null;
+$('runden').addEventListener('click', e => {
+  const b = e.target.closest('button[data-akt]'); if (!b) return;
+  const ri = +b.dataset.r, r = D.runden[ri], c = +b.dataset.c, akt = b.dataset.akt;
+  if (akt === 'bild') { bildZiel = { r: ri, c }; $('bilddatei').click(); return; }
+  if (akt === 'bildWeg') r.aussagen[c].bild = '';
+  if (akt === 'setz') r.aussagen[c].wahr = b.dataset.w === '1';
+  if (akt === 'karteNeu') { if (r.aussagen.length < MAXA) r.aussagen.push(leereAussage()); }
+  if (akt === 'karteWeg') { if (r.aussagen.length > MINA) r.aussagen.splice(c, 1); else return meldung('Eine Runde braucht mindestens ' + MINA + ' Aussagen.', false); }
+  if (akt === 'rundeWeg') {
+    if (b.dataset.sicher !== '1') { b.dataset.sicher = '1'; b.textContent = 'Wirklich löschen?'; b.style.fontSize = '14px'; b.style.color = '#C62828';
+      setTimeout(() => { if (b.isConnected) { b.dataset.sicher = ''; b.textContent = '🗑'; b.style.fontSize = ''; b.style.color = ''; } }, 3000); return; }
+    D.runden.splice(ri, 1);
+  }
+  zeichneRunden();
+  if (akt === 'karteNeu') { const f = document.querySelectorAll(`.afeld[data-r="${ri}"]`); if (f.length) f[f.length - 1].focus(); }
+});
+$('neueRunde').onclick = () => {
+  D.runden.push(leereRunde()); zeichneRunden();
+  const alle = document.querySelectorAll('.runde'); alle[alle.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+function bildFehler(ziel, text) {
+  const m = document.querySelector(`.runde[data-r="${ziel.r}"] .meld`);
+  if (m) m.innerHTML = `<div class="hinweis fehl">${text}</div>`;
+  meldung(text, false);
+}
+$('bilddatei').addEventListener('change', () => {
+  const f = $('bilddatei').files && $('bilddatei').files[0];
+  const ziel = bildZiel; bildZiel = null;
+  if (!f || !ziel) { $('bilddatei').value = ''; return; }
+  const heic = /heic|heif/i.test(f.type + f.name);
+  const rd = new FileReader();
+  rd.onerror = () => bildFehler(ziel, 'Das Bild konnte nicht gelesen werden. Bitte ein anderes Bild versuchen.');
+  rd.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      let url;
+      try {
+        const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, s = Math.min(1, 360 / w, 240 / h);
+        const cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(w * s)); cv.height = Math.max(1, Math.round(h * s));
+        const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+        cx.drawImage(img, 0, 0, cv.width, cv.height);
+        url = cv.toDataURL('image/jpeg', .82);
+      } catch (e) { url = String(rd.result); }
+      D.runden[ziel.r].aussagen[ziel.c].bild = url;
+      zeichneRunden(); meldung('', true);
+    };
+    img.onerror = () => bildFehler(ziel, heic
+      ? 'Dieses Bild ist im Format HEIC (iPhone/iPad-Foto) und kann hier nicht geöffnet werden. Bitte als JPG oder PNG speichern, z. B. über ein Bildschirmfoto.'
+      : 'Dieses Bild konnte nicht geöffnet werden. Bitte ein JPG- oder PNG-Bild verwenden.');
+    img.src = String(rd.result);
+  };
+  rd.readAsDataURL(f);
+  $('bilddatei').value = '';
+});
+
+/* Enter springt ins nächste Feld */
+$('runden').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  e.preventDefault();
+  const alle = [...document.querySelectorAll('#runden input')], i = alle.indexOf(e.target);
+  if (alle[i + 1]) alle[i + 1].focus();
+});
+
+function norm(t) { return istBild(t) ? '' : String(t).trim().replace(/\s+/g, ' ').toLowerCase(); }
+function pruefeEingaben(streng) {
+  let ok = true;
+  document.querySelectorAll('.runde').forEach(el => {
+    const r = D.runden[+el.dataset.r];
+    let leer = 0, ohneWahl = 0, begrFehlt = 0;
+    el.querySelectorAll('input.textfeld, input.textfeld2:not(.pflicht)').forEach(inp => inp.classList.toggle('gefuellt', !!inp.value.trim()));
+    r.aussagen.forEach((A, ci) => {
+      const box = el.querySelector(`.abox[data-c="${ci}"]`), tf = box.querySelector('.afeld');
+      const hatInhalt = !!(A.text.trim() || A.bild);
+      tf.classList.toggle('gefuellt', !!A.text.trim());
+      tf.classList.toggle('leer', streng && !hatInhalt);
+      if (!hatInhalt) leer++;
+      const wf = box.querySelector('.wf'); wf.classList.toggle('fehlt', streng && A.wahr === null);
+      if (A.wahr === null) ohneWahl++;
+      box.querySelectorAll('input.pflicht').forEach(inp => {
+        const v = !!inp.value.trim(); inp.classList.toggle('gefuellt', v); inp.classList.toggle('leer', streng && !v); if (!v) begrFehlt++;
+      });
+    });
+    let h = '';
+    if (streng && leer) { h += `<div class="hinweis fehl">${leer} Aussage${leer === 1 ? ' ist' : 'n sind'} noch leer.</div>`; ok = false; }
+    if (streng && ohneWahl) { h += `<div class="hinweis fehl">Bei ${ohneWahl} Aussage${ohneWahl === 1 ? '' : 'n'} fehlt noch „wahr“ oder „falsch“.</div>`; ok = false; }
+    if (streng && r.begruendung === 'auswahl' && begrFehlt) { h += `<div class="hinweis fehl">Bitte zu jeder Aussage die richtige und mindestens eine falsche Begründung eintragen.</div>`; ok = false; }
+    el.querySelector('.meld').innerHTML = h;
+  });
+  return ok;
+}
+
+function monatJahr() { const d = new Date(); return MONATE[d.getMonth()] + ' ' + d.getFullYear(); }
+$('name').addEventListener('input', () => { D.name = $('name').value; });
+$('titel').addEventListener('input', () => { D.titel = $('titel').value; });
+
+function spielHTML() {
+  const daten = {
+    spielart: 'wahrfalsch', titel: $('titel').value.trim() || 'Wahr oder falsch?',
+    schule: SCHULE, farbe: D.farbe, name: $('name').value.trim(), ki: 'Claude', monat: monatJahr(),
+    runden: D.runden.map(r => ({ anweisung: r.anweisung.trim(), begruendung: r.begruendung, wiederholen: !!r.wiederholen, blitz: +r.blitz || 0,
+      aussagen: r.aussagen.map(A => ({ text: A.text.trim(), bild: A.bild || '', wahr: !!A.wahr,
+        erklaerung: r.begruendung === 'ohne' ? '' : A.erklaerung.trim(), falsch1: r.begruendung === 'auswahl' ? A.falsch1.trim() : '',
+        falsch2: r.begruendung === 'auswahl' ? A.falsch2.trim() : '' })) }))
+  };
+  const json = JSON.stringify(daten).replace(/</g, '\\u003c');
+  return $('vorlage-wf').textContent.replace(/<\\\/script>/g, '</' + 'script>').replace('/*__DATEN__*/', () => json)
+    .replace('<title>Wahr oder falsch?</title>', () => '<title>' + esc(daten.titel) + '</title>');
+}
+function bereit() {
+  if (!pruefeEingaben(true)) { meldung('Bitte die rot oder orange markierten Felder prüfen.', false);
+    const f = document.querySelector('.leer, .doppelt'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'center' }); return false; }
+  return true;
+}
+function meldung(t, gut) { const m = $('meldung'); m.textContent = t; m.className = gut ? 'gut' : 'schlecht'; }
+function kopierenAnbieten() { $('kopieren').style.display = 'inline-block'; }
+function dateiname() {
+  return ($('titel').value.trim() || 'Wahr_oder_falsch').replace(/[äÄ]/g, 'ae').replace(/[öÖ]/g, 'oe').replace(/[üÜ]/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') + '.html';
+}
+$('testen').onclick = () => {
+  if (!bereit()) return;
+  $('testframe').srcdoc = spielHTML();
+  $('testfenster').classList.add('zeigen');
+};
+$('testZu').onclick = () => { $('testfenster').classList.remove('zeigen'); $('testframe').srcdoc = ''; };
+
+let claudeDownloads = null;
+try { if (window.claude && claude.use) claude.use('downloads').then(d => { claudeDownloads = d; }).catch(() => {}); } catch (e) {}
+
+$('laden').onclick = async () => {
+  if (!bereit()) return;
+  const html = spielHTML(), name = dateiname();
+  if (claudeDownloads) {
+    try { await claudeDownloads.save({ filename: name, data: html }); meldung('Das Spiel wurde als „' + name + '“ gespeichert.', true); }
+    catch (e) { if (e && e.code === 'declined') meldung('Speichern abgebrochen.', false); else { meldung('Herunterladen geht hier leider nicht.', false); kopierenAnbieten(); } }
+    return;
+  }
+  try {
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    meldung('Das Spiel wird als „' + name + '“ heruntergeladen.', true); kopierenAnbieten();
+  } catch (e) { { meldung('Herunterladen geht hier leider nicht.', false); kopierenAnbieten(); } }
+};
+
+$('kopieren').onclick = async () => {
+  if (!bereit()) return;
+  const h = spielHTML();
+  try { await navigator.clipboard.writeText(h); meldung('Kopiert! Den Text in eine leere Datei einfügen und als .html speichern.', true); }
+  catch (e) {
+    const t = $('kopierfeld'); t.value = h; t.select();
+    try { document.execCommand('copy'); meldung('Kopiert! Den Text in eine leere Datei einfügen und als .html speichern.', true); }
+    catch (e2) { meldung('Kopieren hat nicht geklappt.', false); }
+  }
+};
+
+/* ---------- Gespeichertes Spiel öffnen ---------- */
+$('oeffnen').onclick = () => $('datei').click();
+$('datei').onchange = () => {
+  const f = $('datei').files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    const m = String(rd.result).match(/<script type="application\/json" id="spieldaten">([\s\S]*?)<\/script>/);
+    let d = null; try { d = m && JSON.parse(m[1]); } catch (e) {}
+    if (!d || d.spielart !== 'wahrfalsch' || !d.runden) return meldung('In dieser Datei wurde kein Spiel aus dem Wahr-oder-falsch-Generator gefunden.', false);
+    D = { titel: d.titel, farbe: FARBEN[d.farbe] ? d.farbe : 'rot', name: d.name || '',
+      runden: d.runden.map(r => ({ anweisung: r.anweisung || '', begruendung: r.begruendung || 'ohne', wiederholen: r.wiederholen !== false, blitz: +r.blitz || 0,
+        aussagen: r.aussagen.slice(0, MAXA).map(A => ({ text: A.text || '', bild: A.bild || '', wahr: !!A.wahr, erklaerung: A.erklaerung || '', falsch1: A.falsch1 || '', falsch2: A.falsch2 || '' })) })) };
+    formularFuellen();
+    meldung('Spiel „' + d.titel + '“ geladen. Du kannst es jetzt ändern.', true);
+  };
+  rd.readAsText(f); $('datei').value = '';
+};
+function formularFuellen() {
+  $('titel').value = D.titel || ''; $('name').value = D.name || '';
+  farbeSetzen(D.farbe || 'rot'); zeichneRunden();
+}
+/* ---------- Blubberblasen ---------- */
+(function () {
+  const b = $('blasen');
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.animationDuration = (14 + Math.random() * 18) + 's';
+    s.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(s);
+  }
+})();
+
+formularFuellen();
+</script>
+</body>
+</html>
