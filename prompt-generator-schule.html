@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt-Generator Schule</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; min-height: 100vh; padding: clamp(12px, 2.2vw, 26px);
+    background: linear-gradient(135deg, var(--r1) 0%, var(--r2) 35%, var(--r3) 72%, var(--r4) 100%) fixed; transition: background .4s; }
+  .blasen { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .blasen span { position: absolute; bottom: -80px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, rgba(255,255,255,.85) 0 10%, rgba(255,255,255,.28) 24%, rgba(255,255,255,.08) 62%, rgba(255,255,255,.35) 100%);
+    border: 1px solid rgba(255,255,255,.45); animation: steigen linear infinite; }
+  @keyframes steigen { from { transform: translate(0, 0); } 50% { transform: translate(14px, -55vh); } to { transform: translate(-8px, -115vh); } }
+  .app { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 14px 18px 10px; border-radius: 28px;
+    background: linear-gradient(160deg, var(--hell) 0%, #ffffff 40%, var(--hell) 100%);
+    box-shadow: 0 10px 34px rgba(0,0,0,.3), 0 0 0 4px rgba(255,255,255,.45); }
+  header { background: linear-gradient(120deg, var(--h1), var(--h2) 45%, var(--h3)); color: #fff; border-radius: 18px;
+    padding: 12px 18px; box-shadow: 0 4px 14px rgba(0,0,0,.2); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -40px; top: -60px; width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(255,255,255,.08); pointer-events: none; }
+  header h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+  header p { margin: 4px 0 0; opacity: .9; font-size: 15px; }
+
+  section { background: #fff; border: 2px solid var(--rand); border-radius: 18px; padding: 14px 18px 16px; margin: 14px 0; }
+  section > h2 { margin: 0 0 10px; font-size: 20px; color: var(--h1); display: flex; align-items: center; gap: 10px; }
+  section > h2 .nr { width: 30px; height: 30px; border-radius: 50%; background: var(--b2); color: #fff; font-size: 16px;
+    display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  label.f { display: block; font-weight: bold; font-size: 15px; margin: 10px 0 4px; }
+  .klein { font-weight: normal; color: #555; font-size: 13px; }
+  input[type=text], select { font: inherit; font-size: 17px; padding: 8px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; background: #fff; }
+  input[type=text]:focus, select:focus { outline: none; border-color: var(--b2); }
+  input.gefuellt { border-color: #43A047; background: #F4FBF3; }
+  input.leer { border-color: #E53935; background: #FFF5F5; }
+  input.doppelt { border-color: #FB8C00; background: #FFF8EC; }
+  .zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 640px) { .zwei { grid-template-columns: 1fr; } }
+
+  .spielart { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  @media (max-width: 640px) { .spielart { grid-template-columns: 1fr; } }
+  .spielart button { background: #fff; color: #333; border: 3px solid #e0e0e0; box-shadow: none; border-radius: 16px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px; text-align: left; font-size: 16px; }
+  .spielart button .gr { font-size: 34px; }
+  .spielart button small { display: block; font-weight: normal; color: #666; font-size: 13px; margin-top: 2px; }
+  .spielart button.an { border-color: var(--b2); background: var(--hell); color: var(--h1); }
+  body.memory .nurKleben { display: none !important; }
+  .farbwahl { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+  .farbwahl button { width: auto; display: flex; flex-direction: column; align-items: center; gap: 9px; background: none; box-shadow: none;
+    color: #333; padding: 0; font-size: 14px; }
+  .farbwahl .kreis { width: 52px; height: 52px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 0 2px #cfd8dc; transition: transform .15s; }
+  .farbwahl button.an .kreis { box-shadow: 0 0 0 3px #111; transform: scale(1.1); }
+  .farbwahl button.an { font-weight: bold; }
+
+  button { font: inherit; font-weight: bold; border: none; border-radius: 999px; cursor: pointer; color: #fff;
+    background: linear-gradient(180deg, var(--b1), var(--b2)); box-shadow: 0 3px 0 var(--b3), 0 6px 12px rgba(0,0,0,.12);
+    padding: 9px 22px; font-size: 16px; transition: transform .1s; }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--b3); }
+  button.hell { background: #fff; color: var(--h1); border: 2px solid var(--b2); box-shadow: none; }
+  button.weg { background: none; color: #999; box-shadow: none; padding: 4px 10px; font-size: 20px; }
+  button.weg:hover { color: #C62828; }
+  button.gross { font-size: 19px; padding: 12px 28px; }
+
+  .runde { border: 2px solid var(--rand); border-radius: 16px; margin: 12px 0; overflow: hidden; }
+  .rkopf { background: var(--hell); padding: 8px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .rkopf b { font-size: 18px; color: var(--h1); margin-right: auto; }
+  .rkopf label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .rkopf select { width: auto; font-size: 15px; padding: 5px 8px; }
+  .rinhalt { padding: 10px 12px 12px; }
+  .aufgabe { font-size: 14px; color: #555; margin-bottom: 8px; }
+  .zeile { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+  .zeile .gnr { width: 26px; text-align: right; color: #888; font-size: 14px; flex: none; }
+  .zelle { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 4px; }
+  .zelle input { flex: 1 1 0; min-width: 0; }
+  .zelle .bildknopf { flex: none; width: 38px; height: 38px; padding: 0; font-size: 18px; border-radius: 10px;
+    background: #fff; border: 2px solid #cfd8dc; box-shadow: none; color: #333; }
+  .zelle .bildknopf:hover { border-color: var(--b2); }
+  .zelle .bild { flex: 1 1 0; min-width: 0; height: 42px; border: 2px solid #43A047; border-radius: 10px; background: #F4FBF3;
+    display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
+  .zelle .bild img { max-height: 100%; max-width: 100%; border-radius: 6px; }
+  .zelle .bild.leer { border-color: #E53935; }
+  .kopfzeile { display: flex; align-items: center; gap: 6px; margin: 2px 0 4px; }
+  .kopfzeile .gnr, .kopfzeile .verb, .kopfzeile .platz { visibility: hidden; }
+  .kopfzeile .platz { width: 40px; flex: none; }
+  .kopfzeile label { flex: 1 1 0; min-width: 0; font-size: 13px; color: #555; display: flex; align-items: center; gap: 4px; }
+  .kopfzeile select { font-size: 14px; padding: 4px 6px; flex: 1; min-width: 0; }
+  .voll { font-size: 14px; color: #555; margin-top: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .zeile .verb { flex: none; color: #9e8f4e; font-weight: bold; font-size: 18px; width: 16px; text-align: center; }
+  .hinweis { font-size: 14px; border-radius: 10px; padding: 8px 12px; margin-top: 8px; }
+  .hinweis.warn { background: #FFF3E0; color: #8D4A00; }
+  .hinweis.fehl { background: #FFEBEE; color: #B71C1C; }
+  .hilfebox { background: var(--hell); border-radius: 12px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+  .hilfebox code { background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 0 5px; font-size: 14px; }
+
+  .knoepfe { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  #meldung { font-weight: bold; font-size: 15px; margin-top: 10px; min-height: 20px; }
+  #meldung.gut { color: #2E7D32; } #meldung.schlecht { color: #C62828; }
+  footer { text-align: right; font-size: 12px; color: #333; margin-top: 6px; }
+
+  #testfenster { position: fixed; inset: 0; z-index: 50; display: none; background: rgba(255,255,255,.5);
+    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); padding: 14px; flex-direction: column; gap: 8px; }
+  #testfenster.zeigen { display: flex; }
+  #testfenster .oben { display: flex; justify-content: flex-end; }
+  #testfenster iframe { flex: 1; width: 100%; border: none; border-radius: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.35); background: #fff; }
+  #kopierfeld { position: fixed; left: -9999px; }
+
+  .korbspalten { display: grid; gap: 12px; }
+  .kspalte { border: 2px solid var(--rand); border-radius: 14px; padding: 8px; background: #fff; min-width: 0; }
+  .kspalte .kname { font-weight: bold; margin-bottom: 8px; }
+  .schalter { display: flex; align-items: center; gap: 10px; margin: 14px 0 4px; font-size: 15px; cursor: pointer; }
+  .schalter input { width: 22px; height: 22px; accent-color: var(--b2); }
+  .typwahl { width: auto !important; font-size: 14px !important; padding: 4px 8px !important; margin-right: auto; }
+  .akopf b { margin-right: 6px !important; }
+  .ozeile { display: flex; align-items: center; gap: 6px; margin: 5px 0; }
+  .ozeile input { flex: 1; font-size: 16px !important; }
+  .okn { flex: none; width: 40px; height: 40px; padding: 0; border-radius: 10px; background: #fff; color: #bbb; border: 2px solid #cfd8dc; box-shadow: none; font-size: 18px; }
+  .okn.an { background: #E8F5E9; color: #2E7D32; border-color: #2E7D32; }
+  .okn.fehlt { border-color: #E53935; }
+  .klein2 { font-size: 14px !important; padding: 5px 14px !important; margin-top: 4px; }
+  .einst { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 4px; }
+  .einst label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .einst select { width: auto; font-size: 15px; padding: 5px 8px; }
+  .abox { border: 2px solid var(--rand); border-radius: 14px; padding: 8px 10px 10px; margin: 10px 0; background: #fff; }
+  .akopf { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .akopf b { color: var(--h1); margin-right: auto; }
+  .wf { display: flex; gap: 6px; border-radius: 12px; padding: 2px; }
+  .wf.fehlt { box-shadow: 0 0 0 3px #E53935; }
+  .wfk { background: #fff; color: #555; border: 2px solid #cfd8dc; box-shadow: none; padding: 5px 14px; font-size: 15px; border-radius: 10px; }
+  .wfk.falsch.an { background: #FFEBEE; border-color: #D32F2F; color: #C62828; }
+  .wfk.wahr.an { background: #E8F5E9; border-color: #2E7D32; color: #2E7D32; }
+  .arein { display: flex; gap: 6px; align-items: stretch; }
+  .arein textarea { flex: 1; min-height: 52px; }
+  .abild { flex: 0 0 120px; height: 56px; border: 2px solid #43A047; border-radius: 10px; background: #F4FBF3; display: flex; align-items: center; justify-content: center; padding: 2px; }
+  .abild img { max-height: 100%; max-width: 100%; border-radius: 6px; }
+  .arein .bildknopf { flex: none; width: 44px; min-height: 52px; padding: 0; font-size: 18px; border-radius: 10px; background: #fff; border: 2px solid #cfd8dc; box-shadow: none; color: #333; }
+  .arein .bildknopf:hover { border-color: var(--b2); }
+  .textfeld2 { margin-top: 6px; font-size: 15px !important; }
+  .begr .richtig::placeholder { color: #2E7D32; }
+  .begr input { border-left-width: 7px !important; }
+  .begr input.richtig { border-left-color: #2E7D32 !important; }
+  .begr input:not(.richtig) { border-left-color: #E57373 !important; }
+  textarea.kartenfeld { font: inherit; font-size: 16px; padding: 6px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; resize: vertical; min-height: 56px; background: #fff; }
+  textarea.kartenfeld:focus { outline: none; border-color: var(--b2); }
+  textarea.gefuellt { border-color: #43A047; background: #F4FBF3; }
+  textarea.leer { border-color: #E53935; background: #FFF5F5; }
+  textarea.doppelt { border-color: #FB8C00; background: #FFF8EC; }
+  .kspalte .kzeile { display: flex; align-items: center; gap: 4px; margin: 5px 0; }
+  .kspalte .kzeile .zelle { flex: 1; }
+  .kspalte .kkopf { font-size: 13px; color: #555; margin: 0 0 4px; }
+  .rkopf select { width: auto; }
+</style>
+<style>
+  .arten { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .arten button { background: #fff; color: #333; border: 3px solid #e0e0e0; box-shadow: none; border-radius: 16px; padding: 12px 14px; text-align: left; font-size: 16px; }
+  .arten button small { display: block; font-weight: normal; color: #666; font-size: 13px; margin-top: 3px; }
+  .arten button.an { border-color: var(--b2); background: var(--hell); color: var(--h1); }
+  .felder { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 700px) { .felder { grid-template-columns: 1fr; } }
+  .felder .breit { grid-column: 1 / -1; }
+  textarea.ein { font: inherit; font-size: 16px; padding: 8px 10px; border: 2px solid #cfd8dc; border-radius: 10px; width: 100%; min-height: 80px; resize: vertical; }
+  textarea.ein:focus { outline: none; border-color: var(--b2); }
+  .gefuellt { border-color: #43A047 !important; background: #F4FBF3 !important; }
+  .chips2 { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .chips2 button { background: #fff; color: #444; border: 2px solid #cfd8dc; box-shadow: none; font-size: 14px; padding: 5px 12px; font-weight: normal; }
+  .chips2 button.an { background: var(--hell); color: var(--h1); border-color: var(--b2); font-weight: bold; }
+  .haken { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; font-size: 15px; }
+  .haken label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .haken input { width: 20px; height: 20px; accent-color: var(--b2); }
+  .ausgabe { background: #fff; border: 3px solid var(--b2); border-radius: 16px; padding: 14px 16px; white-space: pre-wrap; font: 16px/1.5 Arial, sans-serif; min-height: 120px; }
+  .knoepfe2 { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .folge { margin-top: 14px; }
+  .folge .ausgabe { border-width: 2px; border-style: dashed; font-size: 15px; margin-top: 8px; }
+  .fix { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .fix button { background: #FFF8E1; color: #6D4C00; border: 2px solid #FFD54F; box-shadow: none; font-size: 14px; font-weight: normal; padding: 6px 12px; text-align: left; }
+  .fix button.ok { background: #E8F5E9; border-color: #43A047; color: #1B5E20; }
+  .hinweis3 { font-size: 14px; color: #555; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="blasen" id="blasen"></div>
+<div class="app">
+  <header>
+    <h1>Prompt-Generator der Emil-Petri-Schule Arnstadt</h1>
+    <p>Ideen eintragen – daraus entsteht ein fertiger Prompt für Bilder mit ChatGPT oder einer anderen Bild-KI.</p>
+  </header>
+
+  <section>
+    <h2><span class="nr">1</span>Was für ein Bild brauchst du?</h2>
+    <div class="arten" id="arten"></div>
+  </section>
+
+  <section>
+    <h2><span class="nr">2</span>Deine Ideen</h2>
+    <div class="felder" id="felder"></div>
+    <label class="f">Stil</label><div class="chips2" id="stil"></div>
+    <label class="f">Stimmung</label><div class="chips2" id="stimmung"></div>
+    <div class="felder">
+      <div><label class="f">Für wen?</label><div class="chips2" id="alter"></div></div>
+      <div><label class="f">Format</label><div class="chips2" id="format"></div></div>
+    </div>
+    <label class="f">Farben <span class="klein">(kann leer bleiben)</span></label>
+    <input type="text" id="farben" placeholder="z. B. warme Farben, viel Türkis und Gelb">
+    <div class="haken" id="haken"></div>
+  </section>
+
+  <section>
+    <h2><span class="nr">3</span>Dein fertiger Prompt</h2>
+    <div class="ausgabe" id="ausgabe"></div>
+    <div class="knoepfe2">
+      <button class="gross" id="kopieren">📋 Prompt kopieren</button>
+      <button class="hell" id="leeren">↺ Alles leeren</button>
+    </div>
+    <div class="hinweis3">Den Prompt bei ChatGPT einfügen. Gefällt das Bild nicht ganz, hilft oft ein kurzer Nachsatz (siehe unten).</div>
+    <div class="folge" id="folgeBox"></div>
+    <label class="f" style="margin-top:16px">Nachbessern – Sätze zum Kopieren, wenn das Bild nicht passt</label>
+    <div class="fix" id="fix"></div>
+  </section>
+
+  <footer>Erstellt von Marion Klugmann (November 2026) mit freundlicher Unterstützung von Claude.</footer>
+</div>
+<textarea id="kopierfeld"></textarea>
+
+<script>
+const FARBEN = {
+  rot:     { name: 'Rot',    r: ['#6E1515', '#C62828', '#EF5350', '#FFAB91'], h: ['#8E1B1B', '#C62828', '#E5534B'], b: ['#E35D5B', '#C62828', '#8E1B1B'], hell: '#FDEEEE', rand: '#F3CACA' },
+  gruen:   { name: 'Grün',   r: ['#1B4D20', '#2E7D32', '#66BB6A', '#C5E1A5'], h: ['#1B5E20', '#2E7D32', '#43A047'], b: ['#43A047', '#2E7D32', '#1B5E20'], hell: '#EEF7EC', rand: '#CFE6CC' },
+  blau:    { name: 'Blau',   r: ['#0D2F6B', '#1565C0', '#42A5F5', '#B3DCFF'], h: ['#0D47A1', '#1565C0', '#1E88E5'], b: ['#1E88E5', '#1565C0', '#0D47A1'], hell: '#EDF4FD', rand: '#C8DCF5' },
+  pink:    { name: 'Pink',   r: ['#6A1B4D', '#C2185B', '#F06292', '#F8BBD0'], h: ['#880E4F', '#C2185B', '#E85A8E'], b: ['#EC407A', '#C2185B', '#880E4F'], hell: '#FDEFF5', rand: '#F5CADC' },
+};
+
+const $ = id => document.getElementById(id);
+const THEMA = 'rot';
+(function () { const f = FARBEN[THEMA], s = document.documentElement.style;
+  f.r.forEach((c, i) => s.setProperty('--r' + (i + 1), c)); f.h.forEach((c, i) => s.setProperty('--h' + (i + 1), c));
+  f.b.forEach((c, i) => s.setProperty('--b' + (i + 1), c)); s.setProperty('--hell', f.hell); s.setProperty('--rand', f.rand); })();
+
+const ARTEN = {
+  escape: { name: 'Escape-Room-Raum', info: 'Ein Raum mit vielen Verstecken und einem Ausgang', format: '16:9', felder: [
+    ['ort', 'Ort des Raums', 'z. B. Labor eines verrückten Professors, Raumstation, Piratenschiff'],
+    ['thema', 'Thema oder Geschichte', 'z. B. Der Professor hat die Formel für das Gegengift versteckt'],
+    ['dinge', 'Gegenstände, die vorkommen sollen', 'z. B. Tresor, Reagenzgläser, Tafel, Globus, Kisten'],
+    ['ausgang', 'Ausgang', 'z. B. schwere Stahltür, Luke, Portal'] ], folge: true },
+  hintergrund: { name: 'Hintergrund / Startseite', info: 'Eine Szene, auf die später Knöpfe kommen – wie das Lehrerzimmer', format: '16:9', felder: [
+    ['ort', 'Was soll zu sehen sein?', 'z. B. eine gemütliche Bibliothek, ein Fitnessraum, ein Weltraumhafen'],
+    ['dinge', 'Was gehört unbedingt hinein?', 'z. B. ein großes Regal mit leeren Fächern, drei Türen nebeneinander'],
+    ['frei', 'Wo kommen später Knöpfe oder Text hin?', 'z. B. oben in die Mitte, auf die drei Türen, unten rechts'] ] },
+  aufgabe: { name: 'Bild zu einer Aufgabe', info: 'Illustration für eine Sachaufgabe, ein Arbeitsblatt oder Kahoot', format: '4:3', felder: [
+    ['situation', 'Was passiert in der Aufgabe?', 'z. B. Ein Bäcker verkauft Brötchen, 5 Stück kosten 2 €'],
+    ['dinge', 'Was muss deutlich zu sehen sein?', 'z. B. die Brötchen in einem Korb, ein Preisschild ohne Zahl'] ] },
+  figur: { name: 'Figur / Maskottchen', info: 'Eine Begleitfigur für Trainer, Spiele oder Erklärungen', format: '1:1', felder: [
+    ['wer', 'Wer oder was ist die Figur?', 'z. B. eine kluge Eule mit Brille, ein kleiner Roboter'],
+    ['wesen', 'Wie ist sie?', 'z. B. freundlich, etwas tollpatschig, neugierig'],
+    ['pose', 'Was macht sie?', 'z. B. winkt, zeigt nach rechts, hält ein Buch'] ] },
+  karte: { name: 'Bildkarte / Gegenstand', info: 'Ein einzelner Gegenstand, z. B. für Vokabel-Memory oder Zuordnungsspiele', format: '1:1', felder: [
+    ['ding', 'Welcher Gegenstand?', 'z. B. ein Apfel, ein Fahrrad, ein Geodreieck'],
+    ['mehr', 'Weitere Karten im gleichen Stil (eine pro Zeile, kann leer bleiben)', 'z. B.\nBirne\nBanane\nKirsche', 'lang'] ], folge: true },
+  aendern: { name: 'Vorhandenes Bild ändern', info: 'Ein Bild hochladen und nur einen Teil ändern lassen', format: '', felder: [
+    ['bleibt', 'Was soll genau so bleiben?', 'z. B. der ganze Raum, das Licht, die Möbel'],
+    ['aendern', 'Was soll sich ändern?', 'z. B. An die weiße Wand kommt ein großes Regal mit 25 leeren Fächern'] ] }
+};
+const STILE = ['comicartig', 'fotorealistisch', 'wie ein Aquarell', '3D wie ein Animationsfilm', 'flache Grafik (Flat Design)', 'wie ein Kinderbuch'];
+const STIMMUNG = ['fröhlich', 'geheimnisvoll', 'gruselig-lustig', 'futuristisch', 'gemütlich', 'abenteuerlich', 'ruhig'];
+const ALTER = ['Klasse 5–6', 'Klasse 7–8', 'Klasse 9–10', 'Oberstufe', 'Erwachsene'];
+const FORMATE = [['16:9', 'Querformat 16:9'], ['4:3', '4:3'], ['1:1', 'quadratisch'], ['9:16', 'Hochformat']];
+const HAKEN = [['personen', 'keine Personen'], ['schrift', 'keine Schrift und keine Zahlen'], ['logos', 'keine Logos und Marken'], ['hell', 'helle, freundliche Farben'], ['weiss', 'weißer Hintergrund']];
+
+let Z = { art: 'escape', werte: {}, stil: 'comicartig', stimmung: 'fröhlich', alter: 'Klasse 7–8', format: '16:9', farben: '', haken: { personen: true, schrift: true, logos: true } };
+try { const g = JSON.parse(localStorage.getItem('promptgenerator')); if (g && g.art) Z = Object.assign(Z, g); } catch (e) {}
+const merken = () => { try { localStorage.setItem('promptgenerator', JSON.stringify(Z)); } catch (e) {} };
+const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function chips(id, liste, schl) {
+  $(id).innerHTML = liste.map(x => { const [k, t] = Array.isArray(x) ? x : [x, x]; return `<button type="button" data-k="${esc(k)}" class="${Z[schl] === k ? 'an' : ''}">${t}</button>`; }).join('');
+  $(id).onclick = e => { const b = e.target.closest('button'); if (!b) return; Z[schl] = Z[schl] === b.dataset.k && schl !== 'format' ? '' : b.dataset.k; chips(id, liste, schl); baue(); };
+}
+function zeichneArten() {
+  $('arten').innerHTML = Object.entries(ARTEN).map(([k, a]) => `<button type="button" data-a="${k}" class="${Z.art === k ? 'an' : ''}">${a.name}<small>${a.info}</small></button>`).join('');
+}
+$('arten').onclick = e => { const b = e.target.closest('button'); if (!b) return; Z.art = b.dataset.a; if (ARTEN[Z.art].format) Z.format = ARTEN[Z.art].format;
+  if (Z.art === 'karte') { Z.haken.weiss = true; } zeichneAlles(); };
+function zeichneFelder() {
+  const a = ARTEN[Z.art], w = Z.werte[Z.art] || (Z.werte[Z.art] = {});
+  $('felder').innerHTML = a.felder.map(([k, l, p, lang]) => `<div class="${lang || k === 'thema' || k === 'situation' || k === 'aendern' ? 'breit' : ''}"><label class="f">${l}</label>${
+    lang ? `<textarea class="ein" data-k="${k}" placeholder="${esc(p)}">${esc(w[k] || '')}</textarea>` : `<input type="text" data-k="${k}" placeholder="${esc(p)}" value="${esc(w[k] || '')}">`}</div>`).join('') +
+    `<div class="breit"><label class="f">Weitere Ideen <span class="klein">(alles, was dir noch einfällt – kann leer bleiben)</span></label>
+     <textarea class="ein" data-k="ideen" placeholder="z. B. Im Hintergrund soll durch ein Fenster der Mond zu sehen sein. Auf dem Tisch liegt ein offenes Buch.">${esc(w.ideen || '')}</textarea></div>`;
+  $('felder').querySelectorAll('[data-k]').forEach(f => f.classList.toggle('gefuellt', !!f.value.trim()));
+}
+$('felder').addEventListener('input', e => { const f = e.target; if (!f.dataset.k) return; Z.werte[Z.art][f.dataset.k] = f.value; f.classList.toggle('gefuellt', !!f.value.trim()); baue(); });
+$('farben').addEventListener('input', () => { Z.farben = $('farben').value; $('farben').classList.toggle('gefuellt', !!Z.farben.trim()); baue(); });
+function zeichneHaken() {
+  $('haken').innerHTML = HAKEN.map(([k, t]) => `<label><input type="checkbox" data-k="${k}" ${Z.haken[k] ? 'checked' : ''}> ${t}</label>`).join('');
+}
+$('haken').onchange = e => { Z.haken[e.target.dataset.k] = e.target.checked; baue(); };
+
+const satzEnde = t => { t = String(t || '').trim(); return !t ? '' : /[.!?]$/.test(t) ? t : t + '.'; };
+function formatSatz() { const f = FORMATE.find(x => x[0] === Z.format); return Z.format === '1:1' ? 'im quadratischen Format 1:1' : Z.format === '9:16' ? 'im Hochformat 9:16' : 'im Querformat ' + Z.format; }
+function regeln(extra) {
+  const r = [];
+  if (Z.haken.personen) r.push('keine Personen');
+  if (Z.haken.schrift) r.push('keine Schrift, keine Buchstaben, keine Zahlen');
+  if (Z.haken.logos) r.push('keine Logos oder Markennamen');
+  return r.concat(extra || []);
+}
+function stilZeile() {
+  const t = [];
+  if (Z.stil) t.push('Stil: ' + Z.stil);
+  if (Z.stimmung) t.push('Stimmung: ' + Z.stimmung);
+  if (Z.alter) t.push('Passend für ' + (Z.alter === 'Erwachsene' ? 'Erwachsene' : 'Schülerinnen und Schüler der ' + Z.alter.replace('Klasse', 'Klassen')));
+  if (Z.farben.trim()) t.push('Farben: ' + Z.farben.trim());
+  if (Z.haken.hell) t.push('helle, freundliche Farben');
+  return t.length ? t.join('. ') + '.' : '';
+}
+function baueText(art, ueber) {
+  const w = Object.assign({}, Z.werte[art] || {}, ueber || {}), z = [], v = s => String(s || '').trim();
+  if (art === 'escape') {
+    z.push(`Erstelle ein Bild ${formatSatz()} für einen digitalen Escape-Room in der Schule.`);
+    z.push(`Ort: ${v(w.ort) || 'ein geheimnisvoller Raum'}.`);
+    if (v(w.thema)) z.push(`Geschichte: ${satzEnde(w.thema)}`);
+    z.push(`Im Raum gibt es viele kleine Details und Gegenstände, auf die man klicken kann${v(w.dinge) ? ', zum Beispiel ' + v(w.dinge) : ': Schubladen, Kisten, Bücher, Bilderrahmen'}.`);
+    z.push(`Der Ausgang (${v(w.ausgang) || 'eine verschlossene Tür'}) ist gut sichtbar.`);
+    z.push('Die Gegenstände sind gut verteilt, das Bild ist nicht überladen.');
+  }
+  if (art === 'hintergrund') {
+    z.push(`Erstelle ein Bild ${formatSatz()} als Hintergrund für eine Webseite.`);
+    z.push(`Zu sehen: ${satzEnde(v(w.ort) || 'ein freundlicher, aufgeräumter Raum')}`);
+    if (v(w.dinge)) z.push(`Unbedingt im Bild: ${satzEnde(w.dinge)}`);
+    z.push(`Wichtig: ${v(w.frei) ? 'Folgende Bereiche bleiben ruhig und frei, weil dort später Knöpfe oder Text liegen: ' + satzEnde(w.frei) : 'In der Bildmitte und im oberen Drittel ruhige, freie Flächen lassen, weil dort später Knöpfe und Text liegen.'}`);
+    z.push('Alles frontal und gerade gesehen, nicht schräg oder verzerrt.');
+  }
+  if (art === 'aufgabe') {
+    z.push(`Erstelle eine Illustration ${formatSatz()} zu einer Mathe-Sachaufgabe.`);
+    z.push(`Situation: ${satzEnde(v(w.situation) || 'eine Alltagssituation')}`);
+    if (v(w.dinge)) z.push(`Deutlich zu sehen: ${satzEnde(w.dinge)}`);
+    z.push('Das Bild soll die Situation verständlich machen, aber nicht die Lösung verraten. Klarer, ruhiger Hintergrund.');
+  }
+  if (art === 'figur') {
+    z.push(`Erstelle eine Figur ${formatSatz()} als Maskottchen für Lernspiele.`);
+    z.push(`Figur: ${satzEnde(v(w.wer) || 'eine freundliche Fantasiefigur')}`);
+    if (v(w.wesen)) z.push(`Charakter: ${satzEnde(w.wesen)}`);
+    if (v(w.pose)) z.push(`Haltung: ${satzEnde(w.pose)}`);
+    z.push('Die ganze Figur ist zu sehen, mit klaren Umrissen, freigestellt auf schlichtem Hintergrund. Eigene, neue Figur – nicht an bekannte Figuren aus Filmen oder Büchern angelehnt.');
+  }
+  if (art === 'karte') {
+    z.push(`Erstelle eine Bildkarte ${formatSatz()} für ein Lernspiel.`);
+    z.push(`Gegenstand: ${satzEnde(v(w.ding) || 'ein Alltagsgegenstand')}`);
+    z.push('Nur dieser eine Gegenstand, mittig und gut erkennbar, mit etwas Rand. Eindeutig, sodass Kinder sofort wissen, was es ist.');
+  }
+  if (art === 'aendern') {
+    z.push('Bearbeite das hochgeladene Bild.');
+    z.push(`Alles soll genau so bleiben wie es ist${v(w.bleibt) ? ' – besonders ' + v(w.bleibt).replace(/[.]$/, '') : ''}.`);
+    z.push(`Ändere nur Folgendes: ${satzEnde(v(w.aendern) || '…')}`);
+    z.push('Der neue Teil passt in Stil, Licht und Farben genau zum Rest des Bildes.');
+  }
+  if (art !== 'aendern') { const s = stilZeile(); if (s) z.push(s); }
+  if (v(w.ideen)) z.push(`Außerdem: ${satzEnde(w.ideen)}`);
+  const extra = Z.haken.weiss && art !== 'escape' && art !== 'hintergrund' ? ['weißer Hintergrund'] : [];
+  const r = regeln(extra); if (r.length) z.push('Bitte beachten: ' + r.join(', ') + '.');
+  return z.join('\n');
+}
+function baue() {
+  $('ausgabe').textContent = baueText(Z.art);
+  const a = ARTEN[Z.art], fb = $('folgeBox');
+  if (Z.art === 'escape') {
+    fb.innerHTML = `<label class="f">Weitere Räume im gleichen Stil <span class="klein">(Ort eintragen – der Prompt sorgt dafür, dass alle Bilder zusammenpassen)</span></label>
+      ${[2, 3, 4].map(n => `<div style="display:flex;gap:8px;align-items:center;margin:6px 0"><b style="flex:none">Raum ${n}:</b>
+        <input type="text" class="folgeort" data-n="${n}" placeholder="z. B. ${['', '', 'ein dunkler Flur mit Spinden', 'eine alte Bibliothek', 'das Dach mit einem Hubschrauber-Landeplatz'][n]}" value="${esc((Z.werte.escape || {})['raum' + n] || '')}"></div>`).join('')}
+      <div id="folgePrompts"></div>`;
+    fb.querySelectorAll('.folgeort').forEach(i => i.addEventListener('input', () => { Z.werte.escape['raum' + i.dataset.n] = i.value; folge(); merken(); }));
+    folge();
+  } else if (Z.art === 'karte') {
+    const mehr = String((Z.werte.karte || {}).mehr || '').split('\n').map(s => s.trim()).filter(Boolean);
+    fb.innerHTML = mehr.length ? `<label class="f">Weitere Karten im gleichen Stil</label><div class="ausgabe" style="border-style:dashed">${esc(
+      'Erstelle weitere Bildkarten genau im gleichen Stil, mit gleichem Hintergrund und gleicher Größe wie die erste, jede als eigenes Bild:\n' + mehr.map(m => '– ' + m).join('\n'))}</div>
+      <button class="hell" id="kopFolge" style="margin-top:8px">📋 Kopieren</button>` : '';
+    const k = $('kopFolge'); if (k) k.onclick = () => kopiere(k.previousElementSibling.textContent, k);
+  } else fb.innerHTML = '';
+  merken();
+}
+function folge() {
+  const w = Z.werte.escape || {}, raeume = [2, 3, 4].filter(n => String(w['raum' + n] || '').trim());
+  $('folgePrompts').innerHTML = raeume.map(n => `<div class="ausgabe" style="border-style:dashed;margin-top:8px">${esc(
+    `Erstelle das nächste Bild für denselben Escape-Room – Raum ${n}. Genau der gleiche Stil, die gleichen Farben und das gleiche Licht wie im vorherigen Bild.\n` +
+    baueText('escape', { ort: w['raum' + n], thema: '', dinge: '' }).split('\n').slice(1).join('\n'))}</div><button class="hell kf" style="margin-top:6px">📋 Prompt für Raum ${n} kopieren</button>`).join('');
+  $('folgePrompts').querySelectorAll('.kf').forEach(b => b.onclick = () => kopiere(b.previousElementSibling.textContent, b));
+}
+async function kopiere(text, knopf) {
+  const alt = knopf.textContent;
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) { const k = $('kopierfeld'); k.value = text; k.select(); try { document.execCommand('copy'); } catch (x) {} }
+  knopf.textContent = '✔ Kopiert'; setTimeout(() => knopf.textContent = alt, 2000);
+}
+$('kopieren').onclick = () => kopiere($('ausgabe').textContent, $('kopieren'));
+$('leeren').onclick = () => { const b = $('leeren');
+  if (b.dataset.sicher !== '1') { b.dataset.sicher = '1'; b.textContent = 'Wirklich alles leeren?'; setTimeout(() => { b.dataset.sicher = ''; b.textContent = '↺ Alles leeren'; }, 3000); return; }
+  Z.werte = {}; Z.farben = ''; $('farben').value = ''; b.dataset.sicher = ''; b.textContent = '↺ Alles leeren'; zeichneAlles(); };
+
+const FIX = ['Bitte ohne jede Schrift, ohne Buchstaben und ohne Zahlen.', 'Bitte alles ganz frontal und gerade, nicht schräg.', 'Mach den Ausgang größer und deutlicher sichtbar.',
+  'Bitte weniger Gegenstände, das Bild ist zu voll.', 'Bitte mehr kleine Details und Verstecke.', 'Bitte heller und freundlicher.',
+  'Bitte genau den gleichen Stil wie im vorherigen Bild.', 'Ändere nichts anderes am Bild, nur das Genannte.', 'Bitte im Querformat 16:9.', 'Bitte keine Personen im Bild.'];
+$('fix').innerHTML = FIX.map(f => `<button type="button">📋 ${f}</button>`).join('');
+$('fix').onclick = e => { const b = e.target.closest('button'); if (!b) return; const t = b.textContent.replace('📋 ', '').replace('✔ Kopiert', '');
+  navigator.clipboard && navigator.clipboard.writeText(t).catch(() => {}); b.classList.add('ok'); const alt = b.innerHTML; b.textContent = '✔ Kopiert'; setTimeout(() => { b.innerHTML = alt; b.classList.remove('ok'); }, 1500); };
+
+function zeichneAlles() {
+  zeichneArten(); zeichneFelder(); zeichneHaken();
+  chips('stil', STILE, 'stil'); chips('stimmung', STIMMUNG, 'stimmung'); chips('alter', ALTER, 'alter'); chips('format', FORMATE, 'format');
+  $('farben').value = Z.farben; $('farben').classList.toggle('gefuellt', !!Z.farben.trim());
+  baue();
+}
+/* ---------- Blubberblasen ---------- */
+(function () {
+  const b = $('blasen');
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('span');
+    const d = 12 + Math.random() * 58;
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.animationDuration = (14 + Math.random() * 18) + 's';
+    s.style.animationDelay = (-Math.random() * 30) + 's';
+    b.appendChild(s);
+  }
+})();
+
+
+zeichneAlles();
+</script>
+</body>
+</html>
